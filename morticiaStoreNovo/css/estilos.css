@@ -1,0 +1,127 @@
+/*Mobile first!*/
+
+body{
+	margin: 0;
+	width: auto;
+	font-family: "Gill Sans", sans-serif;
+}
+
+header{
+	background-color: black;
+	display: flex;
+	padding: 4%;
+	align-items: center;
+}
+
+
+#dropBarCategorias{
+	margin-right: -4%;
+}
+
+#dropBarCategorias img{
+	padding: 0;
+	width: 60%;
+}
+#dropBarCategorias div{
+	display: none;
+	position: fixed;
+	margin-left: -4%;
+	margin-top: -16%;
+	width: 100%;
+	background-color: black;
+	color: white;
+
+}
+
+#dropBarCategorias button{
+	display: block;
+	margin-left : auto;
+	border: 0;
+	background-color: transparent;
+	font-size: 20px;
+	font-weight: bold;
+	color: white;
+}
+
+#dropBarCategorias a{
+	text-decoration: none;
+	color: white;
+}
+
+#dropBarCategorias p{
+	text-align: center;
+	font-size: 23px;
+}
+
+#logo{
+	margin-right: 15%;
+}
+
+#logo img{
+	width: 130%;
+	
+	
+}
+
+#pesquisa{
+	text-align: right;
+	margin-right: 4%;
+	margin-left: -10%;
+}
+
+
+#pesquisa img{
+/*	position: relative;*/
+	width: 40%;
+	margin: 0;
+
+}
+
+#userIcons{
+	align-items: center;
+	width: 80%;
+	display: flex;
+}
+
+#user{
+	width: 50%;
+}
+
+#carrinho{
+	width: 40%;
+}
+
+
+
+/*Desktop*/
+@media only screen and (min-width: 768px) {
+	body{
+		margin: 0;
+	}
+
+	header{
+		background-color: black;
+	}
+
+	#dropBarCategorias{
+
+	}
+
+	#logo{
+
+	}
+
+	#pesquisa{
+
+	}
+
+	#user{
+
+	}
+
+	#carrinho{
+
+	}
+
+
+}

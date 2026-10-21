@@ -727,6 +727,10 @@
     }
 
     saveProgress();
+
+    if (!state.completed.includes(mission.id)) {
+       checkMissionProgress("__resume__");
+    }
   }
 
   function startNewGame() {
@@ -1215,6 +1219,415 @@
       }
     });
   }
+
+function challengeFrame(title, instructions, content) {
+  const panel = $("#minigame-panel");
+  const container = $("#minigame-content");
+
+  panel.hidden = false;
+  container.replaceChildren();
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "minigame-content";
+
+  const heading = document.createElement("h3");
+  heading.textContent = title;
+
+  const description = document.createElement("p");
+  description.className = "minigame-instructions";
+  description.textContent = instructions;
+
+  wrapper.append(heading, description);
+
+  if (typeof content === "string") {
+    const body = document.createElement("div");
+    body.innerHTML = content;
+    wrapper.appendChild(body);
+  } else if (content instanceof Node) {
+    wrapper.appendChild(content);
+  }
+
+  container.appendChild(wrapper);
+  return wrapper;
+}
+
+function challengeFeedback(container, message, success = false) {
+  let feedback = container.querySelector(".minigame-feedback");
+
+  if (!feedback) {
+    feedback = document.createElement("p");
+    feedback.className = "minigame-feedback";
+    feedback.setAttribute("aria-live", "polite");
+    container.appendChild(feedback);
+  }
+
+  feedback.textContent = message;
+  feedback.style.color = success ? "var(--green)" : "var(--yellow)";
+}
+
+function challengeButton(label, action, className = "button button-secondary") {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className;
+  button.textContent = label;
+  button.addEventListener("click", action);
+  return button;
+}
+
+function challengeWon(message) {
+  const mission = currentMission();
+
+  if (!mission || state.completed.includes(mission.id)) return;
+  if (state.minigamesWon.includes(mission.id)) return;
+
+  state.minigamesWon.push(mission.id);
+  currentChallenge = null;
+
+  addTerminalLine(`[DESAFIO CONCLUÍDO] ${message}`, "success-line");
+  saveProgress();
+
+  $("#minigame-panel").hidden = true;
+  $("#minigame-content").replaceChildren();
+
+  completeMission();
+}
+
+function startMinigame(type) {
+  const mission = currentMission();
+
+  if (!mission || state.completed.includes(mission.id)) return;
+  if (state.minigamesWon.includes(mission.id)) return;
+  if (currentChallenge === mission.id) return;
+
+  currentChallenge = mission.id;
+  $("#minigame-panel").hidden = false;
+
+  switch (type) {
+    case "cipher":
+      minigameCipher();
+      break;
+    case "sequence":
+      minigameSequence();
+      break;
+    case "firewall":
+      minigameFirewall();
+      break;
+    case "identity":
+      minigameIdentity();
+      break;
+    case "riddle":
+      minigameRiddle();
+      break;
+    case "integrity":
+      minigameIntegrity();
+      break;
+    case "blackout":
+      minigameBlackout();
+      break;
+    case "ending":
+      minigameFinalChoice();
+      break;
+    default:
+      challengeFrame(
+        "Desafio indisponível",
+        "Este desafio ainda não foi registrado.",
+        " "
+      );
+  }
+}
+
+function minigameCipher() {
+  const wrapper = challengeFrame(
+    "03 // DECODIFICAR MENSAGEM",
+    "A mensagem foi codificada com uma cifra de César, deslocando cada letra três posições para frente. Recupere a mensagem original.",
+    " "
+  );
+
+  const encrypted = document.createElement("pre");
+  encrypted.className = "sequence-display";
+  encrypted.textContent = "SURMHWR SKDHWRQ";
+
+  const input = document.createElement("input");
+  input.className = "challenge-input";
+  input.placeholder = "Digite a mensagem decodificada...";
+  input.setAttribute("aria-label", "Mensagem decodificada");
+  input.autocomplete = "off";
+
+  const feedbackArea = document.createElement("div");
+
+  const submit = challengeButton("VALIDAR RESPOSTA", () => {
+    const answer = input.value
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .replace(/\s+/g, " ");
+
+    if (answer === "PROJETO PHAETON") {
+      challengeWon("Mensagem recuperada.");
+    } else {
+      challengeFeedback(feedbackArea, "Ainda não. Volte três posições no alfabeto para cada letra.");
+    }
+  }, "button button-primary");
+
+  wrapper.append(encrypted, input, submit, feedbackArea);
+  input.focus({ preventScroll: true });
+}
+
+function minigameSequence() {
+  const wrapper = challengeFrame(
+    "04 // RECONSTRUIR A LINHA DO TEMPO",
+    "Organize os eventos do mais antigo para o mais recente.",
+    " "
+  );
+
+  const options = [
+    {
+      label: "Inicialização → Consulta ao índice → Registro de integridade",
+      correct: true
+    },
+    {
+      label: "Registro de integridade → Inicialização → Consulta ao índice",
+      correct: false
+    },
+    {
+      label: "Consulta ao índice → Registro de integridade → Inicialização",
+      correct: false
+    }
+  ];
+
+  const choices = document.createElement("div");
+  choices.className = "challenge-options";
+  const feedbackArea = document.createElement("div");
+
+  options.forEach((option) => {
+    choices.appendChild(challengeButton(option.label, () => {
+      if (option.correct) {
+        challengeWon("Linha do tempo reconstruída.");
+      } else {
+        challengeFeedback(feedbackArea, "A ordem não corresponde aos horários do log. Tente novamente.");
+      }
+    }, "challenge-option"));
+  });
+
+  wrapper.append(choices, feedbackArea);
+}
+
+function minigameFirewall() {
+  const wrapper = challengeFrame(
+    "05 // PRINCÍPIO DO MENOR PRIVILÉGIO",
+    "O laboratório precisa permitir apenas o acesso necessário ao serviço autorizado. Qual política é a mais adequada?",
+    " "
+  );
+
+  const options = [
+    {
+      label: "A — Permitir qualquer origem, serviço e porta.",
+      correct: false
+    },
+    {
+      label: "B — Permitir somente a origem autorizada e o serviço necessário.",
+      correct: true
+    },
+    {
+      label: "C — Desabilitar todos os registros de auditoria.",
+      correct: false
+    }
+  ];
+
+  const choices = document.createElement("div");
+  choices.className = "challenge-options";
+  const feedbackArea = document.createElement("div");
+
+  options.forEach((option) => {
+    choices.appendChild(challengeButton(option.label, () => {
+      if (option.correct) {
+        challengeWon("Política restritiva selecionada.");
+      } else {
+        challengeFeedback(feedbackArea, "Essa escolha amplia o risco ou prejudica a auditoria. Reavalie o objetivo.");
+      }
+    }, "challenge-option"));
+  });
+
+  wrapper.append(choices, feedbackArea);
+}
+
+function minigameIdentity() {
+  const wrapper = challengeFrame(
+    "06 // AUDITORIA DE IDENTIDADE",
+    "O inventário informa que a conta registrada é USR-104. O registro da sessão apresenta USR-140. Qual identificador precisa de investigação?",
+    " "
+  );
+
+  const choices = document.createElement("div");
+  choices.className = "challenge-options";
+  const feedbackArea = document.createElement("div");
+
+  ["USR-104", "USR-140", "Nenhuma inconsistência"].forEach((answer) => {
+    choices.appendChild(challengeButton(answer, () => {
+      if (answer === "USR-140") {
+        challengeWon("Inconsistência de identidade identificada.");
+      } else {
+        challengeFeedback(feedbackArea, "Compare o registro da sessão com o identificador esperado.");
+      }
+    }, "challenge-option"));
+  });
+
+  wrapper.append(choices, feedbackArea);
+}
+
+function minigameRiddle() {
+  const wrapper = challengeFrame(
+    "07 // A CAIXA MORTA",
+    "Resolva o enigma deixado pelo remetente: o que preserva informação e também pode guardar memórias?",
+    " "
+  );
+
+  const input = document.createElement("input");
+  input.className = "challenge-input";
+  input.placeholder = "Sua resposta...";
+  input.setAttribute("aria-label", "Resposta do enigma");
+  input.autocomplete = "off";
+
+  const feedbackArea = document.createElement("div");
+
+  const submit = challengeButton("RESPONDER", () => {
+    const answer = input.value
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
+    if (answer === "memoria" || answer === "memorias") {
+      challengeWon("Enigma resolvido.");
+    } else {
+      challengeFeedback(feedbackArea, "Pense em algo que guarda informações e recordações.");
+    }
+  }, "button button-primary");
+
+  wrapper.append(input, submit, feedbackArea);
+  input.focus({ preventScroll: true });
+}
+
+function minigameIntegrity() {
+  const wrapper = challengeFrame(
+    "08 // VERIFICAÇÃO DE INTEGRIDADE",
+    "A referência é A17C. Arquivos A e B apresentam A17C; o arquivo C apresenta B91D. Qual registro diverge?",
+    " "
+  );
+
+  const choices = document.createElement("div");
+  choices.className = "challenge-options";
+  const feedbackArea = document.createElement("div");
+
+  ["Arquivo A — A17C", "Arquivo B — A17C", "Arquivo C — B91D"].forEach((answer, index) => {
+    choices.appendChild(challengeButton(answer, () => {
+      if (index === 2) {
+        challengeWon("Divergência de integridade encontrada.");
+      } else {
+        challengeFeedback(feedbackArea, "Esse valor corresponde à referência. Compare os três registros.");
+      }
+    }, "challenge-option"));
+  });
+
+  wrapper.append(choices, feedbackArea);
+}
+
+function minigameBlackout() {
+  const wrapper = challengeFrame(
+    "09 // DECISÃO: PROTOCOLO BLACKOUT",
+    "Você encontrou registros que podem indicar coleta indevida de dados. A origem ainda precisa ser confirmada. Como agir?",
+    " "
+  );
+
+  const choices = document.createElement("div");
+  choices.className = "challenge-options";
+  const feedbackArea = document.createElement("div");
+
+  const options = [
+    {
+      label: "A — Preservar as evidências e encaminhar um relato responsável para apuração.",
+      action: () => {
+        state.flags.preservedEvidence = true;
+        state.flags.responsibleDisclosure = true;
+        state.reputation += 2;
+        challengeWon("Evidências preservadas e encaminhamento responsável registrado.");
+      }
+    },
+    {
+      label: "B — Publicar imediatamente todos os dados sem verificar se há informações pessoais.",
+      action: () => {
+        state.flags.recklessChoice = true;
+        state.reputation -= 3;
+        state.trace = Math.min(100, state.trace + 12);
+        challengeWon("Decisão de divulgação precipitada registrada.");
+      }
+    },
+    {
+      label: "C — Apagar os arquivos para impedir que sejam encontrados.",
+      action: () => {
+        state.flags.recklessChoice = true;
+        state.reputation -= 2;
+        state.trace = Math.min(100, state.trace + 8);
+        challengeWon("A decisão de apagar evidências foi registrada.");
+      }
+    }
+  ];
+
+  options.forEach((option) => {
+    choices.appendChild(challengeButton(option.label, option.action, "challenge-option"));
+  });
+
+  wrapper.append(choices, feedbackArea);
+}
+
+function minigameFinalChoice() {
+  const wrapper = challengeFrame(
+    "10 // O DESTINO DO GHOST PROTOCOL",
+    "Você reuniu as evidências disponíveis. Escolha como encerrar a operação. Sua decisão, o rastro e as ações anteriores influenciarão o desfecho.",
+    " "
+  );
+
+  const choices = document.createElement("div");
+  choices.className = "challenge-options";
+
+  const options = [
+    {
+      label: "A — Preservar os registros e encaminhá-los para investigação responsável.",
+      action: () => {
+        state.flags.preservedEvidence = true;
+        state.flags.responsibleDisclosure = true;
+        state.reputation += 2;
+        challengeWon("Desfecho responsável escolhido.");
+      }
+    },
+    {
+      label: "B — Manter as provas, mas não divulgar a descoberta por enquanto.",
+      action: () => {
+        state.flags.preservedEvidence = true;
+        state.flags.responsibleDisclosure = false;
+        state.reputation += 1;
+        challengeWon("Evidências preservadas em sigilo.");
+      }
+    },
+    {
+      label: "C — Destruir os registros para encerrar a investigação.",
+      action: () => {
+        state.flags.recklessChoice = true;
+        state.flags.preservedEvidence = false;
+        state.reputation -= 3;
+        state.trace = Math.min(100, state.trace + 10);
+        challengeWon("Destruição dos registros registrada.");
+      }
+    }
+  ];
+
+  options.forEach((option) => {
+    choices.appendChild(challengeButton(option.label, option.action, "challenge-option"));
+  });
+
+  wrapper.appendChild(choices);
+}
 
   function init() {
     loadSettings();

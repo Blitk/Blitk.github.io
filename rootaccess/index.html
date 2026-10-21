@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080c0b">
+  <meta
+    name="description"
+    content="ROOT ACCESS: Ghost Protocol — uma aventura cyberpunk de investigação, terminal e decisões."
+  >
+  <title>ROOT ACCESS // GHOST PROTOCOL</title>
+  <link rel="stylesheet" href="styles.css">
+  
+<script src="./game.js?v=20261021-2" defer></script>
+
+</head>
+
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="ROOT ACCESS — início">
+        <span class="brand-mark">R<span>:</span></span>
+        <span class="brand-copy">
+          <strong>ROOT ACCESS</strong>
+          <small>GHOST PROTOCOL <span class="version">v1.0.0</span></small>
+        </span>
+      </a>
+
+      <div class="connection-status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="connection-label">AMBIENTE SIMULADO</span>
+      </div>
+
+      <button id="settings-button" class="icon-button" type="button"
+        aria-label="Abrir configurações" title="Configurações">
+        ⚙
+      </button>
+    </header>
+
+    <main id="game-app">
+      <!-- Tela inicial -->
+      <section id="screen-title" class="screen title-screen active"
+        aria-labelledby="game-title">
+        <div class="title-content">
+          <p class="eyebrow"><span class="blink">▌</span> SINAL NÃO IDENTIFICADO // 03:17:42</p>
+
+          <h1 id="game-title">
+            ROOT<span class="title-accent"> ACCESS</span>
+            <span class="subtitle-title">GHOST PROTOCOL</span>
+          </h1>
+
+          <p class="title-description">
+            A rede está mentindo. Os registros foram apagados.
+            Alguém deixou uma mensagem para você.
+          </p>
+
+          <div class="boot-log" aria-label="Registro de inicialização">
+            <p><span>[ OK ]</span> Ambiente de simulação carregado</p>
+            <p><span>[ OK ]</span> Módulo de narrativa preparado</p>
+            <p><span>[ OK ]</span> Terminal isolado e seguro</p>
+            <p class="boot-warning">[ WARN ] Identidade do operador desconhecida</p>
+          </div>
+
+          <div class="title-actions">
+            <button id="new-game-button" class="button button-primary" type="button">
+              <span aria-hidden="true">▶</span> INICIAR OPERAÇÃO
+            </button>
+            <button id="continue-button" class="button button-secondary" type="button" hidden>
+              CONTINUAR SESSÃO
+            </button>
+            <button id="title-settings-button" class="button button-ghost" type="button">
+              CONFIGURAÇÕES
+            </button>
+          </div>
+
+          <p class="title-footnote">
+            FICÇÃO INTERATIVA · TERMINAL SIMULADO · PROGRESSO LOCAL
+          </p>
+        </div>
+
+        <div class="title-decoration" aria-hidden="true">
+          <div class="crosshair">+</div>
+          <div class="ring ring-one"></div>
+          <div class="ring ring-two"></div>
+          <div class="ring ring-three"></div>
+          <div class="vertical-label">SYS // NODE 07</div>
+          <div class="coordinate-label">23°32' // 46°37'</div>
+        </div>
+      </section>
+
+      <!-- Introdução narrativa -->
+      <section id="screen-intro" class="screen" aria-labelledby="intro-heading" hidden>
+        <div class="section-heading">
+          <p class="eyebrow">ARQUIVO RECUPERADO // CLASSIFICAÇÃO: RESTRITA</p>
+          <h2 id="intro-heading">Uma mensagem no escuro.</h2>
+        </div>
+
+        <article class="story-card">
+          <div class="story-avatar" aria-hidden="true">?</div>
+          <div>
+            <p class="story-speaker">REMETENTE DESCONHECIDO</p>
+            <div id="intro-text" class="story-text" aria-live="polite"></div>
+          </div>
+        </article>
+
+        <div class="story-meta">
+          <span>ORIGEM: DESCONHECIDA</span>
+          <span>INTEGRIDADE: 12%</span>
+          <span>CANAL: SOMENTE LEITURA</span>
+        </div>
+
+        <div class="screen-actions">
+          <button id="begin-missions-button" class="button button-primary" type="button">
+            ACEITAR O CONTRATO <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Área principal do jogo -->
+      <section id="screen-game" class="screen game-screen" aria-label="Área de operação" hidden>
+        <div class="dashboard-header">
+          <div>
+            <p class="eyebrow">OPERAÇÃO ATIVA // <span id="mission-index-label">01 / 10</span></p>
+            <h2 id="mission-title">Inicializando...</h2>
+            <p id="mission-brief" class="mission-brief"></p>
+          </div>
+
+          <div class="operator-card">
+            <div class="operator-avatar" aria-hidden="true">G</div>
+            <div>
+              <span class="muted-label">OPERADOR</span>
+              <strong id="operator-name">GHOST</strong>
+              <span id="operator-rank" class="operator-rank">NOVATO</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid" aria-label="Status da operação">
+          <article class="stat-card">
+            <span class="stat-label">EXPERIÊNCIA</span>
+            <strong id="xp-value">0 XP</strong>
+            <div class="progress-track">
+              <div id="xp-progress" class="progress-fill" style="width:0%"></div>
+            </div>
+            <small id="level-label">NÍVEL 1</small>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">RASTRO DIGITAL</span>
+            <strong id="trace-value">0%</strong>
+            <div class="progress-track danger-track">
+              <div id="trace-progress" class="progress-fill danger-fill" style="width:0%"></div>
+            </div>
+            <small>Quanto menor, melhor</small>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">REPUTAÇÃO</span>
+            <strong id="reputation-value">NEUTRA</strong>
+            <small>Suas escolhas importam</small>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">MISSÕES</span>
+            <strong id="missions-value">0 / 10</strong>
+            <small>Progresso da campanha</small>
+          </article>
+        </div>
+
+        <div class="workspace">
+          <aside class="mission-sidebar">
+            <div class="panel-heading">
+              <span>ÍNDICE DE OPERAÇÕES</span>
+              <span class="panel-indicator">●</span>
+            </div>
+
+            <nav id="mission-list" class="mission-list" aria-label="Missões da campanha">
+              <!-- Preenchido pelo JavaScript -->
+            </nav>
+
+            <div class="sidebar-footer">
+              <span class="muted-label">PROTOCOLO DE SEGURANÇA</span>
+              <strong><span class="status-dot"></span> SANDBOX ATIVO</strong>
+              <small>Comandos executados apenas na simulação.</small>
+            </div>
+          </aside>
+
+          <div class="main-workspace">
+            <section class="panel mission-panel" aria-labelledby="objective-heading">
+              <div class="panel-heading">
+                <span id="objective-heading">OBJETIVO DA OPERAÇÃO</span>
+                <span id="mission-type-badge" class="badge">INVESTIGAÇÃO</span>
+              </div>
+
+              <div id="mission-objective" class="mission-objective"></div>
+
+              <div class="mission-hints">
+                <button id="hint-button" class="text-button" type="button">
+                  [?] Solicitar pista
+                </button>
+                <span id="hint-counter">Pistas disponíveis: 3</span>
+              </div>
+              <div id="hint-output" class="hint-output" hidden aria-live="polite"></div>
+            </section>
+
+            <section class="panel terminal-panel" aria-labelledby="terminal-heading">
+              <div class="terminal-titlebar">
+                <div class="terminal-lights" aria-hidden="true">
+                  <span></span><span></span><span></span>
+                </div>
+                <h3 id="terminal-heading">GHOST SHELL <span>// SIMULATED ENVIRONMENT</span></h3>
+                <button id="clear-terminal-button" class="terminal-clear" type="button">
+                  LIMPAR
+                </button>
+              </div>
+
+              <div id="terminal-output" class="terminal-output"
+                role="log" aria-live="polite" aria-relevant="additions text">
+                <p class="terminal-line system-line">ROOT ACCESS [simulado] — sessão pronta.</p>
+                <p class="terminal-line system-line">Digite <code>help</code> para ver os comandos disponíveis.</p>
+              </div>
+
+              <form id="terminal-form" class="terminal-form" autocomplete="off">
+                <label for="terminal-input" class="terminal-prompt">
+                  <span id="terminal-path">ghost@node-07:~</span><span class="prompt-symbol"> $</span>
+                </label>
+                <input id="terminal-input" name="command" type="text"
+                  spellcheck="false" autocapitalize="off" autocomplete="off"
+                  aria-label="Comando do terminal simulado"
+                  placeholder="Digite um comando..."
+                  maxlength="180">
+                <button class="terminal-submit" type="submit" aria-label="Executar comando">
+                  EXECUTAR
+                </button>
+              </form>
+
+              <div class="terminal-footer">
+                <span>UTF-8</span>
+                <span>SIMULATION MODE</span>
+                <span id="terminal-line-count">2 LINHAS</span>
+              </div>
+            </section>
+
+            <section id="minigame-panel" class="panel minigame-panel" hidden
+              aria-labelledby="minigame-heading">
+              <div class="panel-heading">
+                <span id="minigame-heading">DESAFIO INTERATIVO</span>
+                <span class="badge badge-purple">MINIGAME</span>
+              </div>
+              <div id="minigame-content"></div>
+            </section>
+
+            <section class="panel intel-panel" aria-labelledby="intel-heading">
+              <div class="panel-heading">
+                <span id="intel-heading">INTEL // REGISTROS DESCOBERTOS</span>
+                <span id="intel-count">0 ENTRADAS</span>
+              </div>
+              <div id="intel-list" class="intel-list">
+                <p class="empty-state">Nenhuma evidência recuperada nesta operação.</p>
+              </div>
+            </section>
+
+            <section id="mission-complete-panel" class="panel completion-panel" hidden
+              aria-labelledby="completion-heading">
+              <div class="completion-icon" aria-hidden="true">✓</div>
+              <div>
+                <p class="eyebrow">OPERAÇÃO CONCLUÍDA</p>
+                <h3 id="completion-heading">Objetivo alcançado.</h3>
+                <p id="completion-message"></p>
+                <div id="completion-rewards" class="completion-rewards"></div>
+              </div>
+              <button id="next-mission-button" class="button button-primary" type="button">
+                PRÓXIMA OPERAÇÃO →
+              </button>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- Encerramento -->
+      <section id="screen-ending" class="screen ending-screen" hidden
+        aria-labelledby="ending-title">
+        <p class="eyebrow">RELATÓRIO FINAL // GHOST PROTOCOL</p>
+        <div id="ending-symbol" class="ending-symbol" aria-hidden="true">◆</div>
+        <h2 id="ending-title">Conexão encerrada.</h2>
+        <p id="ending-description" class="ending-description"></p>
+
+        <div class="ending-stats">
+          <div><span>XP TOTAL</span><strong id="ending-xp">0</strong></div>
+          <div><span>MISSÕES</span><strong id="ending-missions">0 / 10</strong></div>
+          <div><span>RASTRO FINAL</span><strong id="ending-trace">0%</strong></div>
+          <div><span>REPUTAÇÃO</span><strong id="ending-reputation">NEUTRA</strong></div>
+        </div>
+
+        <div class="ending-choices">
+          <button id="ending-restart-button" class="button button-primary" type="button">
+            NOVA OPERAÇÃO
+          </button>
+          <button id="ending-title-button" class="button button-secondary" type="button">
+            VOLTAR AO INÍCIO
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span>ROOT ACCESS <span class="footer-separator">/</span> GHOST PROTOCOL</span>
+      <span>AMBIENTE FICCIONAL E ISOLADO</span>
+      <button id="help-button" class="footer-link" type="button">COMANDOS & AJUDA</button>
+    </footer>
+  </div>
+
+  <!-- Configurações -->
+  <dialog id="settings-dialog" class="modal">
+    <form method="dialog" class="modal-header">
+      <div>
+        <p class="eyebrow">PREFERÊNCIAS DO OPERADOR</p>
+        <h2>Configurações</h2>
+      </div>
+      <button class="icon-button modal-close" aria-label="Fechar configurações">×</button>
+    </form>
+
+    <div class="modal-content">
+      <label class="setting-row">
+        <span>
+          <strong>Efeitos de interface</strong>
+          <small>Animações, cursor e efeitos visuais.</small>
+        </span>
+        <input id="setting-effects" type="checkbox" checked>
+      </label>
+
+      <label class="setting-row">
+        <span>
+          <strong>Digitação narrativa</strong>
+          <small>Exibe mensagens com efeito de terminal.</small>
+        </span>
+        <input id="setting-typing" type="checkbox" checked>
+      </label>
+
+      <label class="setting-row">
+        <span>
+          <strong>Alto contraste</strong>
+          <small>Realça textos e elementos interativos.</small>
+        </span>
+        <input id="setting-contrast" type="checkbox">
+      </label>
+
+      <label class="setting-row">
+        <span>
+          <strong>Reduzir movimento</strong>
+          <small>Minimiza animações e transições.</small>
+        </span>
+        <input id="setting-reduced-motion" type="checkbox">
+      </label>
+
+      <div class="setting-actions">
+        <button id="save-settings-button" class="button button-primary" type="button">
+          SALVAR PREFERÊNCIAS
+        </button>
+        <button id="reset-progress-button" class="button button-danger" type="button">
+          APAGAR PROGRESSO
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Ajuda -->
+  <dialog id="help-dialog" class="modal">
+    <form method="dialog" class="modal-header">
+      <div>
+        <p class="eyebrow">DOCUMENTAÇÃO DO SISTEMA</p>
+        <h2>Manual do operador</h2>
+      </div>
+      <button class="icon-button modal-close" aria-label="Fechar ajuda">×</button>
+    </form>
+
+    <div class="modal-content help-content">
+      <h3>Comandos básicos</h3>
+      <dl class="command-reference">
+        <div><dt>help</dt><dd>Lista os comandos disponíveis.</dd></div>
+        <div><dt>ls</dt><dd>Lista arquivos fictícios do diretório atual.</dd></div>
+        <div><dt>pwd</dt><dd>Mostra o caminho dentro do ambiente simulado.</dd></div>
+        <div><dt>cat ARQUIVO</dt><dd>Lê um arquivo de demonstração.</dd></div>
+        <div><dt>scan</dt><dd>Analisa o cenário fictício da missão.</dd></div>
+        <div><dt>inspect ALVO</dt><dd>Examina um recurso do jogo.</dd></div>
+        <div><dt>status</dt><dd>Mostra o estado da operação.</dd></div>
+        <div><dt>clear</dt><dd>Limpa a saída visual do terminal.</dd></div>
+      </dl>
+
+      <p class="notice">
+        Os comandos acima existem apenas dentro do jogo. Não são comandos reais do sistema
+        operacional. As missões são fictícias e não acessam redes ou computadores externos.
+      </p>
+
+      <h3>Controles</h3>
+      <p>Use o teclado para digitar no terminal. No celular, toque no campo de comando para abrir o teclado virtual.</p>
+      <p>As pistas ajudam a identificar o próximo passo, mas podem reduzir a pontuação bônus de uma missão.</p>
+    </div>
+  </dialog>
+
+  <!-- Notificações -->
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Confirmação acessível -->
+  <dialog id="confirm-dialog" class="modal confirm-modal">
+    <div class="modal-content">
+      <p class="eyebrow">CONFIRMAÇÃO NECESSÁRIA</p>
+      <h2 id="confirm-title">Tem certeza?</h2>
+      <p id="confirm-message">Esta ação não poderá ser desfeita.</p>
+      <div class="setting-actions">
+        <button id="confirm-yes-button" class="button button-danger" type="button">
+          CONFIRMAR
+        </button>
+        <button id="confirm-no-button" class="button button-secondary" type="button">
+          CANCELAR
+        </button>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>

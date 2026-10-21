@@ -933,45 +933,42 @@
     saveProgress();
   }
 
-  function checkMissionProgress(token) {
-    const mission = currentMission();
 
-    if (!mission || state.completed.includes(mission.id)) return;
+function checkMissionProgress(token) {
+  const mission = currentMission();
 
-    if (mission.required.includes(token) && token !== "minigame") {
-       state.flags[`mission-${mission.id}-${token}`] = true;
-    }
+  if (!mission || state.completed.includes(mission.id)) {
+    return;
+  }
 
-    const prerequisites = mission.required.filter(
+  if (mission.required.includes(token) && token !== "minigame") {
+    state.flags[`mission-${mission.id}-${token}`] = true;
+  }
+
+  const prerequisites = mission.required.filter(
     (required) => required !== "minigame"
-    );
+  );
 
-    const ready = prerequisites.every(
-       (required) => Boolean(state.flags[`mission-${mission.id}-${required}`])
-    );
+  const ready = prerequisites.every(
+    (required) =>
+      Boolean(state.flags[`mission-${mission.id}-${required}`])
+  );
 
-    if (!ready) {
-       saveProgress();
-       return;
-    }
-
-    if (mission.required.includes("minigame")) {
-       if (!state.minigamesWon.includes(mission.id)) {
-           startMinigame(mission.minigame);
-       }
-       return;
-    }
-
-    completeMission();
-    
+  if (!ready) {
+    saveProgress();
+    return;
   }
-    const done = mission.required.every((required) => {
-      if (required === "minigame") return state.minigamesWon.includes(mission.id);
-      return Boolean(state.flags[`mission-${mission.id}-${required}`]);
-    });
 
-    if (done) completeMission();
+  if (mission.required.includes("minigame")) {
+    if (!state.minigamesWon.includes(mission.id)) {
+      startMinigame(mission.minigame);
+    }
+    return;
   }
+
+  completeMission();
+}
+
 
   function completeMission() {
     const mission = currentMission();

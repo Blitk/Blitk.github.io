@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bolhas Aero</title>
+<style>
+:root{
+  --sky1:#2aa8ee;--sky2:#8fdcff;--sky3:#e4f9ff;
+  --grass1:#6fd33a;--grass2:#2f9a1f;
+  --ink:#0b4a78;--glass:rgba(255,255,255,.38);--glassb:rgba(255,255,255,.8);
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sky1:#0f6fc0;--sky2:#4fb8ee;--sky3:#bfeeff;--ink:#06335a}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;overflow:hidden;font-family:"Segoe UI","Frutiger","Trebuchet MS",Verdana,sans-serif;color:var(--ink);background:var(--sky1);user-select:none;touch-action:none}
+#stage{position:fixed;inset:0;background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 55%,var(--sky3) 100%);overflow:hidden}
+.sun{position:absolute;top:-120px;right:-80px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,230,.95) 0%,rgba(255,255,200,.45) 30%,rgba(255,255,255,0) 68%);animation:pulse 6s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.08);opacity:.85}}
+.cloud{position:absolute;height:60px;width:180px;border-radius:60px;background:linear-gradient(#fff,#e6f6ff);box-shadow:0 6px 18px rgba(255,255,255,.6);opacity:.85;animation:drift linear infinite}
+.cloud:before,.cloud:after{content:"";position:absolute;background:inherit;border-radius:50%}
+.cloud:before{width:80px;height:80px;left:25px;top:-38px}
+.cloud:after{width:64px;height:64px;left:90px;top:-28px}
+@keyframes drift{from{transform:translateX(-260px)}to{transform:translateX(calc(100vw + 260px))}}
+.hills{position:absolute;left:0;right:0;bottom:0;height:26%;min-height:120px}
+.hills svg{width:100%;height:100%;display:block}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.glass{background:linear-gradient(180deg,rgba(255,255,255,.7),var(--glass) 50%,rgba(255,255,255,.3));border:1px solid var(--glassb);border-radius:18px;box-shadow:0 8px 28px rgba(10,80,140,.35),inset 0 1px 0 #fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#hud{position:absolute;top:max(10px,env(safe-area-inset-top,0px));left:10px;right:10px;display:flex;gap:10px;justify-content:space-between;pointer-events:none}
+.pill{padding:6px 16px;min-width:92px;text-align:center;font-weight:700;text-shadow:0 1px 0 #fff}
+.pill small{display:block;font-size:11px;font-weight:600;opacity:.75}
+.pill b{font-size:24px;line-height:1}
+#timebar{position:absolute;top:calc(max(10px,env(safe-area-inset-top,0px)) + 66px);left:10px;right:10px;height:14px;border-radius:10px;overflow:hidden;pointer-events:none}
+#timefill{height:100%;width:100%;background:linear-gradient(180deg,#b6ff7a,#4cc41f 55%,#35a30f);box-shadow:inset 0 2px 3px rgba(255,255,255,.8);transition:width .2s linear}
+#combo{position:absolute;left:50%;top:calc(max(10px,env(safe-area-inset-top,0px)) + 92px);transform:translateX(-50%);font-weight:800;font-size:26px;color:#fff;text-shadow:0 2px 0 #1b7fc4,0 0 14px #fff;opacity:0;transition:opacity .2s;pointer-events:none}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px}
+.panel{width:min(440px,100%);padding:26px 22px;text-align:center}
+h1{margin:0 0 6px;font-size:clamp(34px,9vw,52px);letter-spacing:-1px;color:#fff;text-shadow:0 2px 0 #1b86d1,0 4px 12px rgba(0,80,160,.5)}
+.panel p{margin:8px 0;line-height:1.45;font-size:15px}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;text-align:left;margin:14px 0;font-size:14px;align-items:center}
+.dot{width:26px;height:26px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 -6px 8px rgba(255,255,255,.35)}
+.btn{margin-top:10px;font:700 20px "Segoe UI",Verdana,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(0,60,0,.6);padding:12px 38px;border-radius:40px;border:1px solid #2a8b13;cursor:pointer;
+  background:linear-gradient(180deg,#a8f06a 0%,#58d02a 48%,#3fb818 52%,#6fe036 100%);box-shadow:0 6px 16px rgba(20,100,0,.4),inset 0 2px 2px rgba(255,255,255,.9)}
+.btn:hover{filter:brightness(1.08)}.btn:active{transform:translateY(2px)}
+.btn:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.hide{display:none!important}
+.big{font-size:54px;font-weight:800;line-height:1;margin:4px 0}
+@media (prefers-reduced-motion:reduce){.cloud,.sun{animation:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="sun"></div>
+  <div class="cloud" style="top:12%;animation-duration:70s;animation-delay:-20s"></div>
+  <div class="cloud" style="top:30%;animation-duration:95s;animation-delay:-60s;transform:scale(.7)"></div>
+  <div class="cloud" style="top:20%;animation-duration:120s;animation-delay:-5s;transform:scale(1.2)"></div>
+  <div class="hills"><svg viewBox="0 0 800 200" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fe85a"/><stop offset="1" stop-color="#2f9a1f"/></linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fcf2f"/><stop offset="1" stop-color="#1f7d14"/></linearGradient></defs>
+    <path d="M0 90 Q150 20 320 80 T640 60 T800 80 V200 H0Z" fill="url(#g1)"/>
+    <path d="M0 140 Q200 80 400 130 T800 110 V200 H0Z" fill="url(#g2)"/></svg></div>
+  <canvas id="c"></canvas>
+
+  <div id="hud" class="hide">
+    <div class="glass pill"><small>Pontos</small><b id="score">0</b></div>
+    <div class="glass pill"><small>Recorde</small><b id="best">0</b></div>
+    <div class="glass pill"><small>Tempo</small><b id="time">60</b></div>
+  </div>
+  <div id="timebar" class="glass hide"><div id="timefill"></div></div>
+  <div id="combo"></div>
+
+  <div id="start" class="overlay">
+    <div class="glass panel">
+      <h1>Bolhas Aero</h1>
+      <p>Estoure as bolhas antes que o tempo acabe. Encadeie estouros para multiplicar os pontos!</p>
+      <div class="legend">
+        <span class="dot" style="background:radial-gradient(circle at 35% 30%,#fff,#5cd0ff 60%,#1f8fe0)"></span><span>Bolha comum: +10 pontos</span>
+        <span class="dot" style="background:radial-gradient(circle at 35% 30%,#fff,#ffe36a 60%,#f0a800)"></span><span>Bolha dourada: +50 pontos</span>
+        <span class="dot" style="background:radial-gradient(circle at 35% 30%,#fff,#9dff7a 60%,#2fb81a)"></span><span>Bolha verde: +4 segundos</span>
+        <span class="dot" style="background:radial-gradient(circle at 35% 30%,#ffd0d0,#ff5f5f 60%,#b81414)"></span><span>Bolha vermelha: evite! -3 segundos</span>
+      </div>
+      <button class="btn" id="play">Jogar</button>
+    </div>
+  </div>
+
+  <div id="over" class="overlay hide">
+    <div class="glass panel">
+      <h1>Fim de jogo</h1>
+      <p>Sua pontuação</p>
+      <div class="big" id="final">0</div>
+      <p id="msg"></p>
+      <p>Maior combo: <b id="maxc">0</b> &nbsp;|&nbsp; Bolhas: <b id="pops">0</b></p>
+      <button class="btn" id="again">Jogar de novo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',resize);resize();
+
+let best=0;
+try{best=parseInt(localStorage.getItem('bolhasAeroBest')||'0',10)||0}catch(e){}
+$('best').textContent=best;
+
+// áudio simples (WebAudio)
+let AC=null;
+function tone(f,d,type,vol,slide){
+  try{
+    if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;
+    o.type=type||'sine';o.frequency.setValueAtTime(f,t);
+    if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+    g.gain.setValueAtTime(vol||.12,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);
+  }catch(e){}
+}
+const sfx={
+  pop:c=>tone(500+Math.min(c,12)*60,.12,'sine',.14,1200+Math.min(c,12)*60),
+  gold:()=>{tone(880,.15,'triangle',.14);setTimeout(()=>tone(1320,.25,'triangle',.14),90)},
+  time:()=>{tone(660,.1,'sine',.14);setTimeout(()=>tone(990,.18,'sine',.14),80)},
+  bad:()=>tone(160,.35,'sawtooth',.12,70),
+  miss:()=>tone(240,.08,'square',.04),
+  end:()=>{tone(523,.2,'triangle',.14);setTimeout(()=>tone(392,.2,'triangle',.14),180);setTimeout(()=>tone(330,.4,'triangle',.14),360)}
+};
+
+const TYPES={
+  normal:{h:[195,205,215,175],pts:10},
+  gold:{h:[45],pts:50},
+  time:{h:[105],pts:0},
+  bad:{h:[0],pts:0}
+};
+let bubbles=[],parts=[],texts=[];
+let running=false,score,timeLeft,combo,maxCombo,pops,spawnT,elapsed,last;
+
+function spawn(){
+  const r=Math.random();
+  let type='normal';
+  if(r<.07)type='gold';else if(r<.14)type='time';else if(r<.14+Math.min(.2,.07+elapsed/400))type='bad';
+  const size=type==='gold'?28+Math.random()*10:26+Math.random()*38;
+  const hs=TYPES[type].h;
+  const speed=(50+Math.random()*60+elapsed*1.1)*(type==='gold'?1.5:1)*(H/700>0.6?H/700:0.6);
+  bubbles.push({x:size+Math.random()*(W-size*2),y:H+size,r:size,vy:speed,type,hue:hs[Math.floor(Math.random()*hs.length)],ph:Math.random()*6.28,amp:10+Math.random()*25,t:0,x0:0});
+  const b=bubbles[bubbles.length-1];b.x0=b.x;
+}
+
+function drawBubble(b){
+  const {x,y,r,hue,type}=b;
+  const sat=type==='bad'?85:90;
+  ctx.save();
+  ctx.translate(x,y);
+  // corpo translúcido
+  let g=ctx.createRadialGradient(-r*.3,-r*.35,r*.05,0,0,r);
+  g.addColorStop(0,`hsla(${hue},100%,95%,.85)`);
+  g.addColorStop(.55,`hsla(${hue},${sat}%,62%,.32)`);
+  g.addColorStop(.88,`hsla(${hue},${sat}%,48%,.55)`);
+  g.addColorStop(1,`hsla(${hue},100%,90%,.9)`);
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,6.2832);ctx.fill();
+  // aro
+  ctx.lineWidth=1.5;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.stroke();
+  // brilho inferior
+  let g2=ctx.createRadialGradient(r*.2,r*.55,0,r*.2,r*.55,r*.55);
+  g2.addColorStop(0,`hsla(${hue},100%,85%,.55)`);g2.addColorStop(1,`hsla(${hue},100%,85%,0)`);
+  ctx.fillStyle=g2;ctx.beginPath();ctx.arc(0,0,r*.96,0,6.2832);ctx.fill();
+  // reflexo superior (gloss)
+  ctx.save();ctx.rotate(-.5);
+  let g3=ctx.createLinearGradient(0,-r*.85,0,-r*.3);
+  g3.addColorStop(0,'rgba(255,255,255,.95)');g3.addColorStop(1,'rgba(255,255,255,.05)');
+  ctx.fillStyle=g3;ctx.beginPath();ctx.ellipse(0,-r*.58,r*.5,r*.26,0,0,6.2832);ctx.fill();ctx.restore();
+  // símbolos
+  ctx.fillStyle='rgba(255,255,255,.95)';ctx.strokeStyle='rgba(255,255,255,.95)';ctx.textAlign='center';ctx.textBaseline='middle';
+  if(type==='gold'){ctx.font=`bold ${r*.9}px Segoe UI,Verdana`;ctx.shadowColor='rgba(180,110,0,.8)';ctx.shadowBlur=4;ctx.fillText('★',0,r*.12)}
+  if(type==='time'){ctx.font=`bold ${r*.6}px Segoe UI,Verdana`;ctx.shadowColor='rgba(0,100,0,.8)';ctx.shadowBlur=4;ctx.fillText('+4s',0,r*.12)}
+  if(type==='bad'){ctx.lineWidth=r*.14;ctx.lineCap='round';ctx.shadowColor='rgba(120,0,0,.8)';ctx.shadowBlur=4;const k=r*.3;ctx.beginPath();ctx.moveTo(-k,-k+r*.1);ctx.lineTo(k,k+r*.1);ctx.moveTo(k,-k+r*.1);ctx.lineTo(-k,k+r*.1);ctx.stroke()}
+  ctx.restore();
+}
+
+function burst(b,col){
+  const n=14+Math.floor(b.r/4);
+  for(let i=0;i<n;i++){
+    const a=Math.random()*6.28,s=60+Math.random()*180;
+    parts.push({x:b.x,y:b.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,r:2+Math.random()*(b.r/9),life:.6+Math.random()*.4,max:1,hue:b.hue});
+  }
+  parts.push({x:b.x,y:b.y,ring:true,r:b.r,life:.35,max:.35,hue:b.hue});
+}
+function float(x,y,t,col){texts.push({x,y,t,col,life:1})}
+
+function hit(px,py){
+  if(!running)return;
+  for(let i=bubbles.length-1;i>=0;i--){
+    const b=bubbles[i],dx=px-b.x,dy=py-b.y;
+    if(dx*dx+dy*dy<=(b.r+6)*(b.r+6)){
+      bubbles.splice(i,1);burst(b);pops++;
+      if(b.type==='bad'){
+        sfx.bad();combo=0;timeLeft=Math.max(0,timeLeft-3);float(b.x,b.y,'-3s','#ff4d4d');shake=12;
+      }else if(b.type==='time'){
+        sfx.time();timeLeft=Math.min(75,timeLeft+4);combo++;float(b.x,b.y,'+4s','#38c71a');
+      }else{
+        combo++;const mult=1+Math.floor(combo/5);
+        const p=TYPES[b.type].pts*mult;score+=p;
+        b.type==='gold'?sfx.gold():sfx.pop(combo);
+        float(b.x,b.y,'+'+p,b.type==='gold'?'#ffb000':'#ffffff');
+      }
+      maxCombo=Math.max(maxCombo,combo);updateHUD();return;
+    }
+  }
+  // errou
+  if(combo>0)sfx.miss();combo=0;updateHUD();
+  parts.push({x:px,y:py,ring:true,r:6,life:.25,max:.25,hue:200});
+}
+
+let shake=0;
+function updateHUD(){
+  $('score').textContent=score;
+  $('time').textContent=Math.ceil(timeLeft);
+  $('timefill').style.width=Math.min(100,timeLeft/60*100)+'%';
+  const c=$('combo');
+  if(combo>=3){c.textContent='Combo x'+combo+(combo>=5?'  (pontos x'+(1+Math.floor(combo/5))+')':'');c.style.opacity=1}else c.style.opacity=0;
+}
+
+function loop(ts){
+  if(!last)last=ts;
+  let dt=Math.min(.05,(ts-last)/1000);last=ts;
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if(shake>0){ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.85;if(shake<.5)shake=0}
+  if(running){
+    elapsed+=dt;timeLeft-=dt;spawnT-=dt;
+    const rate=Math.max(.28,.75-elapsed*.008);
+    while(spawnT<=0){spawn();spawnT+=rate*(.7+Math.random()*.6)}
+    if(timeLeft<=0){timeLeft=0;updateHUD();endGame()}
+    else{$('time').textContent=Math.ceil(timeLeft);$('timefill').style.width=Math.min(100,timeLeft/60*100)+'%'}
+  }else if(Math.random()<dt*2.2&&bubbles.length<14){spawn()} // bolhas decorativas no menu
+  for(let i=bubbles.length-1;i>=0;i--){
+    const b=bubbles[i];b.t+=dt;b.y-=b.vy*dt;b.x=b.x0+Math.sin(b.t*1.6+b.ph)*b.amp;
+    if(b.y<-b.r*2){
+      bubbles.splice(i,1);continue;
+    }
+    drawBubble(b);
+  }
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];p.life-=dt;if(p.life<=0){parts.splice(i,1);continue}
+    const a=p.life/p.max;
+    if(p.ring){ctx.strokeStyle=`hsla(${p.hue},100%,90%,${a})`;ctx.lineWidth=3*a;ctx.beginPath();ctx.arc(p.x,p.y,p.r+(1-a)*30,0,6.28);ctx.stroke()}
+    else{p.vy+=260*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.fillStyle=`hsla(${p.hue},100%,88%,${a})`;ctx.beginPath();ctx.arc(p.x,p.y,p.r*a+.5,0,6.28);ctx.fill()}
+  }
+  for(let i=texts.length-1;i>=0;i--){
+    const t=texts[i];t.life-=dt*1.1;if(t.life<=0){texts.splice(i,1);continue}
+    t.y-=40*dt;ctx.globalAlpha=Math.min(1,t.life*1.5);ctx.font='bold 24px Segoe UI,Verdana';ctx.textAlign='center';
+    ctx.lineWidth=4;ctx.strokeStyle='rgba(10,80,140,.6)';ctx.strokeText(t.t,t.x,t.y);ctx.fillStyle=t.col;ctx.fillText(t.t,t.x,t.y);ctx.globalAlpha=1;
+  }
+  ctx.restore();
+  requestAnimationFrame(loop);
+}
+
+function startGame(){
+  bubbles=[];parts=[];texts=[];score=0;timeLeft=60;combo=0;maxCombo=0;pops=0;spawnT=0;elapsed=0;running=true;
+  $('start').classList.add('hide');$('over').classList.add('hide');
+  $('hud').classList.remove('hide');$('timebar').classList.remove('hide');
+  updateHUD();tone(600,.15,'sine',.1,900);
+}
+function endGame(){
+  running=false;sfx.end();
+  $('hud').classList.add('hide');$('timebar').classList.add('hide');$('combo').style.opacity=0;
+  let rec=score>best;
+  if(rec){best=score;try{localStorage.setItem('bolhasAeroBest',String(best))}catch(e){}}
+  $('best').textContent=best;
+  $('final').textContent=score;$('maxc').textContent=maxCombo;$('pops').textContent=pops;
+  $('msg').textContent=rec&&score>0?'Novo recorde! Parabéns!':(score>=800?'Excelente! Você é mestre das bolhas.':score>=400?'Muito bom! Dá para melhorar o combo.':'Tente de novo e encadeie mais estouros.');
+  $('over').classList.remove('hide');
+}
+
+$('play').addEventListener('click',startGame);
+$('again').addEventListener('click',startGame);
+cv.addEventListener('pointerdown',e=>{
+  if(AC&&AC.state==='suspended')AC.resume();
+  const r=cv.getBoundingClientRect();hit(e.clientX-r.left,e.clientY-r.top);
+});
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

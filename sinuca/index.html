@@ -1,129 +1,151 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="h-full w-full overflow-hidden">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sinuca Master 8-Ball - IA & Treino</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Sinuca Master 8-Ball</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * {
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
+            box-sizing: border-box;
         }
-        body {
-            background: radial-gradient(circle, #1a202c 0%, #0f172a 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
+
         canvas {
             display: block;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0,0,0,0.5);
+            touch-action: none;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0,0,0,0.6);
             border-radius: 12px;
         }
-        /* Custom range slider styling */
+
+        /* Estilização customizada do Slider de Força */
         input[type=range] {
             -webkit-appearance: none;
             background: #334155;
-            border-radius: 8px;
-            height: 12px;
+            border-radius: 9999px;
+            height: 10px;
         }
+
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 24px;
             width: 24px;
             border-radius: 50%;
             background: #f59e0b;
+            border: 2px solid #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        input[type=range]::-moz-range-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #f59e0b;
+            border: 2px solid #ffffff;
             cursor: pointer;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col items-center justify-between p-2 md:p-4 text-white">
+<body class="h-full w-full flex flex-col justify-between items-center p-2 sm:p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.5rem+env(safe-area-inset-top))] text-white select-none">
 
-    <!-- Header / Placar -->
-    <header class="w-full max-w-4xl bg-slate-800/80 backdrop-blur border border-slate-700/50 rounded-2xl p-3 shadow-xl flex items-center justify-between gap-2 z-10">
+    <!-- 1. PLACAR / TOPO (NÃO ENCOLHE: flex-shrink-0) -->
+    <header class="w-full max-w-4xl bg-slate-800/90 backdrop-blur border border-slate-700/60 rounded-xl p-2 sm:p-3 shadow-xl flex items-center justify-between gap-2 shrink-0 z-10">
         <!-- Jogador / Humano -->
-        <div id="p1-card" class="flex-1 bg-slate-900/60 p-2.5 rounded-xl border border-amber-500/30 flex flex-col items-center justify-center transition-all">
-            <div class="flex items-center gap-2">
-                <span id="p1-badge" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="font-bold text-xs sm:text-base text-amber-400" id="p1-name">Você</span>
+        <div id="p1-card" class="flex-1 bg-slate-900/70 p-2 rounded-lg border border-amber-500/40 flex flex-col items-center justify-center transition-all">
+            <div class="flex items-center gap-1.5">
+                <span id="p1-badge" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="font-bold text-xs sm:text-sm text-amber-400" id="p1-name">Você</span>
             </div>
-            <div class="text-xs text-slate-400 mt-1" id="p1-type">Qualquer Bola</div>
-            <div id="p1-potted" class="flex gap-1 mt-1.5 min-h-[22px] flex-wrap justify-center"></div>
+            <div class="text-[10px] sm:text-xs text-slate-400 mt-0.5" id="p1-type">Qualquer Bola</div>
+            <div id="p1-potted" class="flex gap-1 mt-1 min-h-[18px] flex-wrap justify-center"></div>
         </div>
 
         <!-- Status / Centro -->
-        <div class="flex flex-col items-center justify-center px-2 text-center min-w-[120px]">
-            <span class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Sinuca Master</span>
-            <div id="game-status" class="text-sm sm:text-base font-extrabold text-amber-300 my-0.5">Sua Vez</div>
-            <button id="btn-restart" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1 rounded-full border border-slate-500/40 transition active:scale-95">
+        <div class="flex flex-col items-center justify-center px-1 sm:px-3 text-center min-w-[100px] sm:min-w-[130px]">
+            <span class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Sinuca Master</span>
+            <div id="game-status" class="text-xs sm:text-sm font-extrabold text-amber-300 my-0.5 whitespace-nowrap">Sua Vez</div>
+            <button id="btn-restart" class="text-[11px] bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 px-2.5 py-0.5 rounded-full border border-slate-500/40 transition active:scale-95">
                 Novo Jogo
             </button>
         </div>
 
         <!-- Oponente (Robô IA ou Treino) -->
-        <div id="p2-card" class="flex-1 bg-slate-900/60 p-2.5 rounded-xl border border-transparent flex flex-col items-center justify-center transition-all opacity-60">
-            <div class="flex items-center gap-2">
-                <span id="p2-badge" class="w-3 h-3 rounded-full bg-slate-600"></span>
-                <span class="font-bold text-xs sm:text-base text-blue-400" id="p2-name">Robô IA</span>
+        <div id="p2-card" class="flex-1 bg-slate-900/70 p-2 rounded-lg border border-transparent flex flex-col items-center justify-center transition-all opacity-60">
+            <div class="flex items-center gap-1.5">
+                <span id="p2-badge" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+                <span class="font-bold text-xs sm:text-sm text-blue-400" id="p2-name">Robô IA</span>
             </div>
-            <div class="text-xs text-slate-400 mt-1" id="p2-type">Qualquer Bola</div>
-            <div id="p2-potted" class="flex gap-1 mt-1.5 min-h-[22px] flex-wrap justify-center"></div>
+            <div class="text-[10px] sm:text-xs text-slate-400 mt-0.5" id="p2-type">Qualquer Bola</div>
+            <div id="p2-potted" class="flex gap-1 mt-1 min-h-[18px] flex-wrap justify-center"></div>
         </div>
     </header>
 
-    <!-- Área Principal do Canvas -->
-    <main class="flex-1 w-full flex items-center justify-center my-2 relative overflow-hidden max-w-5xl">
+    <!-- 2. ÁREA CENTRAL DO CANVAS (EXPANDE E SE AJUSTA DINAMICAMENTE) -->
+    <main id="canvas-container" class="flex-1 w-full flex items-center justify-center my-1 sm:my-2 relative overflow-hidden max-w-5xl">
         <canvas id="poolCanvas"></canvas>
 
         <!-- Overlay de Mensagens do Jogo -->
-        <div id="toast" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 transition-opacity duration-300 bg-black/80 border border-amber-500/50 text-amber-300 px-6 py-3 rounded-2xl text-lg font-bold shadow-2xl text-center z-20">
+        <div id="toast" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 transition-opacity duration-300 bg-black/85 border border-amber-500/50 text-amber-300 px-5 py-2.5 rounded-2xl text-sm sm:text-base font-bold shadow-2xl text-center z-20">
             Mensagem
         </div>
     </main>
 
-    <!-- Modos de Jogo & Controles Mobile -->
-    <footer class="w-full max-w-4xl bg-slate-800/80 backdrop-blur border border-slate-700/50 rounded-2xl p-3 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 z-10">
+    <!-- 3. RODAPÉ / PAINEL DE CONTROLES (NÃO ENCOLHE: flex-shrink-0) -->
+    <footer class="w-full max-w-4xl bg-slate-800/90 backdrop-blur border border-slate-700/60 rounded-xl p-2 sm:p-3 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 shrink-0 z-10">
         
         <!-- Seleção de Modo -->
-        <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
-            <label class="text-xs font-medium text-slate-300">Modo:</label>
-            <select id="mode-select" class="bg-slate-900 text-amber-400 text-xs sm:text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-amber-500">
+        <div class="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+            <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">Modo:</label>
+            <select id="mode-select" class="bg-slate-900 text-amber-400 text-xs font-bold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer">
                 <option value="cpu">Contra Robô (IA)</option>
                 <option value="practice">Treino Livre</option>
             </select>
         </div>
 
-        <!-- Slider de Força (Excelente para Mobile / Precisão Desktop) -->
-        <div class="flex items-center gap-3 w-full sm:w-1/2">
-            <span class="text-xs font-semibold text-slate-300">Força:</span>
-            <input type="range" id="power-slider" min="5" max="100" value="35" class="w-full cursor-pointer">
-            <span id="power-val" class="text-xs font-bold text-amber-400 min-w-[30px]">35%</span>
+        <!-- Slider de Força -->
+        <div class="flex items-center gap-2.5 w-full sm:flex-1 max-w-md px-1">
+            <span class="text-xs font-semibold text-slate-300 whitespace-nowrap">Força:</span>
+            <input type="range" id="power-slider" min="5" max="100" value="40" class="w-full cursor-pointer">
+            <span id="power-val" class="text-xs font-bold text-amber-400 min-w-[34px] text-right">40%</span>
         </div>
 
-        <!-- Botão de Tacada Mobile -->
-        <button id="btn-shoot" class="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm px-6 py-2 rounded-xl shadow-lg transition active:scale-95 disabled:opacity-40">
-            TACADA
+        <!-- Botão de Tacada -->
+        <button id="btn-shoot" class="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm px-6 py-2 rounded-lg shadow-lg transition active:scale-95 disabled:opacity-40 whitespace-nowrap">
+            DAR TACADA
         </button>
     </footer>
 
-    <!-- Modal Fim de Jogo -->
-    <div id="modal-winner" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-800 border-2 border-amber-500/50 p-6 sm:p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl transform scale-100">
+    <!-- MODAL FIM DE JOGO -->
+    <div id="modal-winner" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border-2 border-amber-500/50 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl">
             <div class="text-4xl mb-2">🏆</div>
-            <h2 id="winner-title" class="text-2xl font-black text-amber-400 mb-2">Você Venceu!</h2>
-            <p id="winner-desc" class="text-slate-300 text-sm mb-6">Encaçapou a bola 8 com sucesso!</p>
-            <button id="btn-modal-restart" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 rounded-xl transition shadow-lg active:scale-95">
+            <h2 id="winner-title" class="text-xl sm:text-2xl font-black text-amber-400 mb-1">Você Venceu!</h2>
+            <p id="winner-desc" class="text-slate-300 text-xs sm:text-sm mb-5">Encaçapou a bola 8 com sucesso!</p>
+            <button id="btn-modal-restart" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-xl transition shadow-lg active:scale-95">
                 Jogar Novamente
             </button>
         </div>
     </div>
 
-    <!-- CÓDIGO JS PRINCIPAL DO JOGO -->
+    <!-- SCRIPT PRINCIPAL DO JOGO -->
     <script>
         // =========================================================================
-        // 1. GERENCIADOR DE SOM (SINTETIZADO COM WEB AUDIO API)
+        // 1. SINTETIZADOR DE ÁUDIO PROCEDURAL (WEB AUDIO API)
         // =========================================================================
         class SoundManager {
             constructor() {
@@ -145,9 +167,8 @@
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 
-                // Som grave de impacto sintético
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(130, this.ctx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.08);
 
                 gain.gain.setValueAtTime(Math.min(volume, 1) * 0.8, this.ctx.currentTime);
@@ -166,17 +187,17 @@
                 const gain = this.ctx.createGain();
 
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(80, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(85, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.09);
 
                 gain.gain.setValueAtTime(Math.min(volume, 1) * 0.5, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.09);
 
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
 
                 osc.start();
-                osc.stop(this.ctx.currentTime + 0.1);
+                osc.stop(this.ctx.currentTime + 0.09);
             }
 
             playPocket() {
@@ -185,17 +206,17 @@
                 const gain = this.ctx.createGain();
 
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.25);
+                osc.frequency.setValueAtTime(280, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(55, this.ctx.currentTime + 0.22);
 
-                gain.gain.setValueAtTime(0.9, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.85, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
 
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
 
                 osc.start();
-                osc.stop(this.ctx.currentTime + 0.25);
+                osc.stop(this.ctx.currentTime + 0.22);
             }
 
             playWin() {
@@ -226,32 +247,21 @@
         // =========================================================================
         const canvas = document.getElementById('poolCanvas');
         const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvas-container');
 
-        // Dimensões internas da mesa (Proporção real 2:1)
+        // Dimensões nominais internas da mesa (Proporção 2:1)
         const TABLE_WIDTH = 1000;
         const TABLE_HEIGHT = 500;
-        const MARGIN = 50; // Largura das bordas da madeira
+        const MARGIN = 50; // Largura das bordas de madeira
         const BALL_RADIUS = 10.5;
         const POCKET_RADIUS = 22;
-        const FRICTION = 0.986; // Fricção do pano verde
+        const FRICTION = 0.986;
 
-        // Cores oficiais das bolas de sinuca
         const BALL_COLORS = {
-            1: '#facc15', // Amarelo
-            2: '#2563eb', // Azul
-            3: '#dc2626', // Vermelho
-            4: '#7e22ce', // Roxo
-            5: '#f97316', // Laranja
-            6: '#16a34a', // Verde
-            7: '#991b1b', // Vinho / Marrom
-            8: '#0f172a', // Preta
-            9: '#facc15', // Listrada Amarela
-            10: '#2563eb', // Listrada Azul
-            11: '#dc2626', // Listrada Vermelha
-            12: '#7e22ce', // Listrada Roxa
-            13: '#f97316', // Listrada Laranja
-            14: '#16a34a', // Listrada Verde
-            15: '#991b1b'  // Listrada Vinho
+            1: '#facc15', 2: '#2563eb', 3: '#dc2626', 4: '#7e22ce',
+            5: '#f97316', 6: '#16a34a', 7: '#991b1b', 8: '#0f172a',
+            9: '#facc15', 10: '#2563eb', 11: '#dc2626', 12: '#7e22ce',
+            13: '#f97316', 14: '#16a34a', 15: '#991b1b'
         };
 
         // Estado do jogo
@@ -259,14 +269,13 @@
         let balls = [];
         let cueBall = null;
         let pockets = [];
-        let gameMode = 'cpu'; // 'cpu' ou 'practice'
-        let currentPlayer = 1; // 1 (Você/Humano) ou 2 (Robô IA)
+        let gameMode = 'cpu';
+        let currentPlayer = 1; // 1: Humano, 2: IA
         let playerTypes = { 1: null, 2: null }; // 'solid', 'stripe'
         let pottedThisTurn = [];
         let firstHitBall = null;
         let isAiming = false;
-        let aimAngle = 0; // Ângulo em radianos
-        let cueDistance = 0; // Para animação do taco recuando
+        let aimAngle = 0;
         let isMoving = false;
         let isBallInHand = false;
         let gameOver = false;
@@ -289,7 +298,7 @@
         const modalWinner = document.getElementById('modal-winner');
 
         // =========================================================================
-        // 3. CLASSE DA BOLA
+        // 3. CLASSE BOLA DE SINUCA
         // =========================================================================
         class Ball {
             constructor(x, y, number) {
@@ -307,15 +316,12 @@
             update() {
                 if (this.isPotted) return;
 
-                // Aplica velocidade
                 this.x += this.vx;
                 this.y += this.vy;
 
-                // Aplica atrito/fricção do pano
                 this.vx *= FRICTION;
                 this.vy *= FRICTION;
 
-                // Para movimento residual pequeno
                 if (Math.hypot(this.vx, this.vy) < 0.05) {
                     this.vx = 0;
                     this.vy = 0;
@@ -370,13 +376,13 @@
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
                 ctx.fill();
 
-                // Corpo principal da bola
+                // Corpo
                 ctx.beginPath();
                 ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.isStripe ? '#ffffff' : this.color;
                 ctx.fill();
 
-                // Faixa se for bola listrada (9 a 15)
+                // Faixa (se listrada)
                 if (this.isStripe) {
                     ctx.beginPath();
                     ctx.arc(0, 0, this.radius, -Math.PI / 3, Math.PI / 3);
@@ -385,14 +391,13 @@
                     ctx.fill();
                 }
 
-                // Círculo interno com número (exceto bola branca)
+                // Círculo numérico
                 if (this.number !== 0) {
                     ctx.beginPath();
                     ctx.arc(0, 0, this.radius * 0.45, 0, Math.PI * 2);
                     ctx.fillStyle = '#ffffff';
                     ctx.fill();
 
-                    // Número
                     ctx.fillStyle = '#000000';
                     ctx.font = 'bold 8px sans-serif';
                     ctx.textAlign = 'center';
@@ -400,12 +405,12 @@
                     ctx.fillText(this.number.toString(), 0, 0.5);
                 }
 
-                // Brilho 3D (Gradiente Radial)
+                // Brilho 3D
                 const grad = ctx.createRadialGradient(
                     -this.radius * 0.3, -this.radius * 0.3, 1,
                     0, 0, this.radius
                 );
-                grad.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
                 grad.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
                 grad.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
 
@@ -419,31 +424,27 @@
         }
 
         // =========================================================================
-        // 4. INICIALIZAÇÃO DA MESA E BOLAS
+        // 4. SETUP E MESA
         // =========================================================================
         function initPockets() {
             pockets = [
-                { x: MARGIN + 4, y: MARGIN + 4 }, // Canto Superior Esquerdo
-                { x: MARGIN + TABLE_WIDTH / 2, y: MARGIN - 2 }, // Meio Superior
-                { x: MARGIN + TABLE_WIDTH - 4, y: MARGIN + 4 }, // Canto Superior Direito
-                { x: MARGIN + 4, y: MARGIN + TABLE_HEIGHT - 4 }, // Canto Inferior Esquerdo
-                { x: MARGIN + TABLE_WIDTH / 2, y: MARGIN + TABLE_HEIGHT + 2 }, // Meio Inferior
-                { x: MARGIN + TABLE_WIDTH - 4, y: MARGIN + TABLE_HEIGHT - 4 } // Canto Inferior Direito
+                { x: MARGIN + 4, y: MARGIN + 4 },
+                { x: MARGIN + TABLE_WIDTH / 2, y: MARGIN - 2 },
+                { x: MARGIN + TABLE_WIDTH - 4, y: MARGIN + 4 },
+                { x: MARGIN + 4, y: MARGIN + TABLE_HEIGHT - 4 },
+                { x: MARGIN + TABLE_WIDTH / 2, y: MARGIN + TABLE_HEIGHT + 2 },
+                { x: MARGIN + TABLE_WIDTH - 4, y: MARGIN + TABLE_HEIGHT - 4 }
             ];
         }
 
         function setupRack() {
             balls = [];
-            
-            // Bola Branca (Cue Ball)
             cueBall = new Ball(MARGIN + TABLE_WIDTH * 0.25, MARGIN + TABLE_HEIGHT / 2, 0);
             balls.push(cueBall);
 
-            // Triângulo de Bolas (1 a 15)
             const startX = MARGIN + TABLE_WIDTH * 0.72;
             const startY = MARGIN + TABLE_HEIGHT / 2;
             
-            // Ordem estratégica (Bola 8 no meio, cantos mesclados)
             const rackOrder = [
                 1,
                 10, 2,
@@ -461,8 +462,7 @@
 
                 for (let row = 0; row <= col; row++) {
                     const y = startRowY + row * (BALL_RADIUS * 2 + 0.5);
-                    const ballNum = rackOrder[index++];
-                    balls.push(new Ball(x, y, ballNum));
+                    balls.push(new Ball(x, y, rackOrder[index++]));
                 }
             }
         }
@@ -479,7 +479,7 @@
         }
 
         // =========================================================================
-        // 5. FÍSICA E COLISÕES
+        // 5. COLISÕES E FÍSICA
         // =========================================================================
         function resolveBallCollisions() {
             for (let i = 0; i < balls.length; i++) {
@@ -495,32 +495,27 @@
                     const minDist = b1.radius + b2.radius;
 
                     if (dist < minDist) {
-                        // Registrar primeira bola tocada pela branca
                         if (b1 === cueBall && !firstHitBall) firstHitBall = b2;
                         if (b2 === cueBall && !firstHitBall) firstHitBall = b1;
 
-                        // Vetor Normal
                         const nx = dx / dist;
                         const ny = dy / dist;
 
-                        // Correção de Sobreposição (Separar bolas)
                         const overlap = minDist - dist;
                         b1.x -= nx * (overlap / 2);
                         b1.y -= ny * (overlap / 2);
                         b2.x += nx * (overlap / 2);
                         b2.y += ny * (overlap / 2);
 
-                        // Cálculo da Colisão Elástica em 2D
                         const kx = b1.vx - b2.vx;
                         const ky = b1.vy - b2.vy;
-                        const p = 2 * (nx * kx + ny * ky) / 2; // Massas iguais = 1
+                        const p = 2 * (nx * kx + ny * ky) / 2;
 
                         b1.vx -= p * nx;
                         b1.vy -= p * ny;
                         b2.vx += p * nx;
                         b2.vy += p * ny;
 
-                        // Tocar som de impacto proporcional à força
                         const impactSpeed = Math.hypot(kx, ky);
                         if (impactSpeed > 0.3) {
                             soundManager.playHit(impactSpeed / 12);
@@ -543,23 +538,20 @@
 
                         if (ball !== cueBall) {
                             pottedThisTurn.push(ball);
-                            soundManager.playPocket();
-                        } else {
-                            soundManager.playPocket();
                         }
+                        soundManager.playPocket();
                     }
                 });
             });
         }
 
         // =========================================================================
-        // 6. REGRAS DO JOGO E MUDANÇA DE TURNO
+        // 6. REGRAS DE JOGO
         // =========================================================================
         function processTurnRules() {
             let switchTurn = true;
             let foul = false;
 
-            // 1. Bola Branca Encaçapada (Falta)
             if (cueBall.isPotted) {
                 foul = true;
                 showToast("Falta! Bola branca caiu.");
@@ -571,14 +563,12 @@
                 isBallInHand = true;
             }
 
-            // 2. Nenhuma Bola Atingida
             if (!firstHitBall && !cueBall.isPotted) {
                 foul = true;
                 showToast("Falta! Nenhuma bola foi atingida.");
                 isBallInHand = true;
             }
 
-            // 3. Checar Bola 8 (Preta)
             const eightBallPotted = pottedThisTurn.some(b => b.number === 8);
             if (eightBallPotted) {
                 const pType = playerTypes[currentPlayer];
@@ -587,17 +577,14 @@
                 );
 
                 if (myRemaining.length === 0 && !foul) {
-                    // Vitória!
-                    handleWin(currentPlayer, currentPlayer === 1 ? "Você encaçapou a Bola 8 perfeitamente!" : "O Robô IA encaçapou a Bola 8 perfeitamente!");
+                    handleWin(currentPlayer, currentPlayer === 1 ? "Você encaçapou a Bola 8!" : "O Robô IA encaçapou a Bola 8!");
                 } else {
-                    // Derrota por encaçapar a 8 na hora errada ou com falta
                     const winner = currentPlayer === 1 ? 2 : 1;
-                    handleWin(winner, currentPlayer === 1 ? "Você encaçapou a Bola 8 indevidamente!" : "O Robô IA encaçapou a Bola 8 indevidamente!");
+                    handleWin(winner, currentPlayer === 1 ? "Você encaçapou a Bola 8 indevidamente!" : "O Robô encaçapou a Bola 8 indevidamente!");
                 }
                 return;
             }
 
-            // 4. Atribuir Grupos (Lisas / Listradas) na primeira bola encaçapada
             const validPotted = pottedThisTurn.filter(b => b.number !== 0 && b.number !== 8);
             if (!playerTypes[1] && validPotted.length > 0 && !foul) {
                 const firstPotted = validPotted[0];
@@ -612,28 +599,25 @@
                 showToast(`${pName} ficou com as ${playerTypes[currentPlayer] === 'solid' ? 'Lisas (1-7)' : 'Listradas (9-15)'}!`);
             }
 
-            // 5. Verificar se acertou sua própria bola primeiro (Falta)
             if (firstHitBall && playerTypes[currentPlayer] && !foul) {
                 const targetType = playerTypes[currentPlayer];
                 const hitType = firstHitBall.number <= 7 ? 'solid' : 'stripe';
                 
-                // Checar se restam bolas do jogador antes da 8
                 const myRemaining = balls.filter(b => !b.isPotted && b.number !== 0 && b.number !== 8 && 
                     (targetType === 'solid' ? b.number <= 7 : b.number >= 9)
                 );
 
                 if (myRemaining.length > 0 && hitType !== targetType && firstHitBall.number !== 8) {
                     foul = true;
-                    showToast("Falta! Atingiu a bola do oponente primeiro.");
+                    showToast("Falta! Atingiu a bola do oponente.");
                     isBallInHand = true;
                 }
             }
 
-            // 6. Manter a vez se encaçapou a bola certa sem cometer falta
             if (!foul && validPotted.length > 0) {
                 const pType = playerTypes[currentPlayer];
                 if (!pType) {
-                    switchTurn = false; // Bola livre
+                    switchTurn = false;
                 } else {
                     const hitCorrectGroup = validPotted.some(b => 
                         pType === 'solid' ? b.number <= 7 : b.number >= 9
@@ -642,14 +626,12 @@
                 }
             }
 
-            // Alternar Turno
             if (switchTurn && gameMode !== 'practice') {
                 currentPlayer = currentPlayer === 1 ? 2 : 1;
             }
 
             updateUI();
 
-            // Turno da IA
             if (gameMode === 'cpu' && currentPlayer === 2 && !gameOver) {
                 setTimeout(playCPUTurn, 1000);
             }
@@ -667,49 +649,45 @@
         function showToast(msg) {
             toast.innerText = msg;
             toast.classList.remove('opacity-0');
-            setTimeout(() => toast.classList.add('opacity-0'), 2200);
+            setTimeout(() => toast.classList.add('opacity-0'), 2000);
         }
 
         function updateUI() {
-            // Atualizar nomes
             p1Name.innerText = "Você";
             p2Name.innerText = gameMode === 'practice' ? "Treino" : "Robô IA";
 
-            // Atualizar Cartões de Vez
             if (gameMode === 'practice') {
                 p1Card.classList.remove('opacity-60');
                 p1Card.classList.add('border-amber-500/80', 'bg-slate-800');
                 p2Card.classList.add('opacity-60', 'border-transparent');
-                document.getElementById('p1-badge').className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
-                document.getElementById('p2-badge').className = "w-3 h-3 rounded-full bg-slate-600";
+                document.getElementById('p1-badge').className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+                document.getElementById('p2-badge').className = "w-2.5 h-2.5 rounded-full bg-slate-600";
                 gameStatus.innerText = "Treino Livre";
             } else if (currentPlayer === 1) {
                 p1Card.classList.remove('opacity-60', 'border-transparent');
                 p1Card.classList.add('border-amber-500/80', 'bg-slate-800');
                 p2Card.classList.add('opacity-60', 'border-transparent');
-                document.getElementById('p1-badge').className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
-                document.getElementById('p2-badge').className = "w-3 h-3 rounded-full bg-slate-600";
+                document.getElementById('p1-badge').className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+                document.getElementById('p2-badge').className = "w-2.5 h-2.5 rounded-full bg-slate-600";
                 gameStatus.innerText = "Sua Vez";
             } else {
                 p2Card.classList.remove('opacity-60', 'border-transparent');
                 p2Card.classList.add('border-blue-500/80', 'bg-slate-800');
                 p1Card.classList.add('opacity-60', 'border-transparent');
-                document.getElementById('p2-badge').className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
-                document.getElementById('p1-badge').className = "w-3 h-3 rounded-full bg-slate-600";
-                gameStatus.innerText = "Vez do Robô IA";
+                document.getElementById('p2-badge').className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+                document.getElementById('p1-badge').className = "w-2.5 h-2.5 rounded-full bg-slate-600";
+                gameStatus.innerText = "Vez da IA";
             }
 
-            // Atualizar Tipos de Bola
             p1Type.innerText = playerTypes[1] ? (playerTypes[1] === 'solid' ? 'Lisas (1-7)' : 'Listradas (9-15)') : 'Qualquer Bola';
             p2Type.innerText = playerTypes[2] ? (playerTypes[2] === 'solid' ? 'Lisas (1-7)' : 'Listradas (9-15)') : 'Qualquer Bola';
 
-            // Atualizar bolas encaçapadas na UI
             renderPottedBallsUI(p1Potted, 1);
             renderPottedBallsUI(p2Potted, 2);
         }
 
-        function renderPottedBallsUI(container, player) {
-            container.innerHTML = '';
+        function renderPottedBallsUI(containerUI, player) {
+            containerUI.innerHTML = '';
             const type = playerTypes[player];
             if (!type) return;
 
@@ -719,26 +697,24 @@
 
             potted.forEach(b => {
                 const dot = document.createElement('div');
-                dot.className = 'w-4 h-4 rounded-full border border-white/40 flex items-center justify-center text-[9px] font-bold text-black shadow';
+                dot.className = 'w-3.5 h-3.5 rounded-full border border-white/40 flex items-center justify-center text-[8px] font-bold text-black shadow';
                 dot.style.backgroundColor = b.color;
                 dot.innerText = b.number;
-                container.appendChild(dot);
+                containerUI.appendChild(dot);
             });
         }
 
         // =========================================================================
-        // 7. INTELIGÊNCIA ARTIFICIAL (BOT CPU)
+        // 7. ROBÔ (IA) E TACADAS
         // =========================================================================
         function playCPUTurn() {
             if (isMoving || gameOver || gameMode !== 'cpu') return;
 
-            // Encontrar alvos válidos para a CPU
             const cpuType = playerTypes[2];
             let validTargets = balls.filter(b => !b.isPotted && b.number !== 0 && b.number !== 8 &&
                 (!cpuType || (cpuType === 'solid' ? b.number <= 7 : b.number >= 9))
             );
 
-            // Se não houver bolas normais, mirar na 8
             if (validTargets.length === 0) {
                 const eight = balls.find(b => b.number === 8 && !b.isPotted);
                 if (eight) validTargets = [eight];
@@ -746,22 +722,15 @@
 
             if (validTargets.length === 0) return;
 
-            // Escolher uma bola alvo aleatória/próxima
             const target = validTargets[Math.floor(Math.random() * validTargets.length)];
-            
-            // Adicionar um pequeno erro na mira para parecer humano
             const angleToTarget = Math.atan2(target.y - cueBall.y, target.x - cueBall.x);
-            const errorMargin = (Math.random() - 0.5) * 0.15;
+            const errorMargin = (Math.random() - 0.5) * 0.12;
             aimAngle = angleToTarget + errorMargin;
 
-            // Tacada
-            const power = 30 + Math.random() * 45;
+            const power = 35 + Math.random() * 40;
             shoot(power);
         }
 
-        // =========================================================================
-        // 8. TACADA E RENDERING (CANVAS)
-        // =========================================================================
         function shoot(power) {
             if (isMoving) return;
 
@@ -776,28 +745,30 @@
             pottedThisTurn = [];
             firstHitBall = null;
 
-            // Som de tacada do taco na bola
             soundManager.playHit(power / 60);
         }
 
+        // =========================================================================
+        // 8. RENDERIZAÇÃO DA MESA E TACO
+        // =========================================================================
         function drawTable() {
-            // Fundo / Borda de Madeira Externa
+            // Moldura externa
             ctx.fillStyle = '#291d0e';
             ctx.beginPath();
             ctx.roundRect(0, 0, canvas.width, canvas.height, 20);
             ctx.fill();
 
-            // Acabamento interno da madeira
+            // Madeira interna
             ctx.fillStyle = '#422a10';
             ctx.beginPath();
             ctx.roundRect(MARGIN - 15, MARGIN - 15, TABLE_WIDTH + 30, TABLE_HEIGHT + 30, 10);
             ctx.fill();
 
-            // Pano Verde (Área de jogo)
+            // Pano Verde
             ctx.fillStyle = '#056537';
             ctx.fillRect(MARGIN, MARGIN, TABLE_WIDTH, TABLE_HEIGHT);
 
-            // Linha de Cabeça e Ponto Central (Headstring / Hand Line)
+            // Linha de saída
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -805,7 +776,7 @@
             ctx.lineTo(MARGIN + TABLE_WIDTH * 0.25, MARGIN + TABLE_HEIGHT);
             ctx.stroke();
 
-            // Caçapas (Pockets)
+            // Caçapas
             pockets.forEach(p => {
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
@@ -820,11 +791,10 @@
         function drawAimLine() {
             if (!isAiming || isMoving || (gameMode === 'cpu' && currentPlayer === 2)) return;
 
-            const maxLineDist = 400;
+            const maxLineDist = 380;
             const dirX = Math.cos(aimAngle);
             const dirY = Math.sin(aimAngle);
 
-            // Mira tracejada principal
             ctx.save();
             ctx.setLineDash([6, 6]);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
@@ -836,26 +806,25 @@
             ctx.stroke();
             ctx.restore();
 
-            // Taco de Sinuca
+            // Taco
             const pVal = parseFloat(powerSlider.value);
-            const offset = 20 + (pVal * 0.5); // Recuo dinâmico do taco com base na força
+            const offset = 20 + (pVal * 0.45);
 
             ctx.save();
             ctx.translate(cueBall.x, cueBall.y);
-            ctx.rotate(aimAngle + Math.PI); // Aponta para trás
+            ctx.rotate(aimAngle + Math.PI);
 
-            // Gradiente do Taco
-            const cueGrad = ctx.createLinearGradient(offset, 0, offset + 320, 0);
-            cueGrad.addColorStop(0, '#fef08a'); // Ponta
+            const cueGrad = ctx.createLinearGradient(offset, 0, offset + 300, 0);
+            cueGrad.addColorStop(0, '#fef08a');
             cueGrad.addColorStop(0.02, '#78350f');
             cueGrad.addColorStop(0.7, '#d97706');
-            cueGrad.addColorStop(1, '#1e293b'); // Cabo
+            cueGrad.addColorStop(1, '#1e293b');
 
             ctx.fillStyle = cueGrad;
             ctx.beginPath();
             ctx.moveTo(offset, -2.5);
-            ctx.lineTo(offset + 320, -5);
-            ctx.lineTo(offset + 320, 5);
+            ctx.lineTo(offset + 300, -5);
+            ctx.lineTo(offset + 300, 5);
             ctx.lineTo(offset, 2.5);
             ctx.closePath();
             ctx.fill();
@@ -866,10 +835,8 @@
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Desenhar Mesa
             drawTable();
 
-            // 2. Atualizar e Desenhar Bolas
             let currentlyMoving = false;
             balls.forEach(ball => {
                 ball.update();
@@ -879,14 +846,11 @@
                 }
             });
 
-            // 3. Colisões
             resolveBallCollisions();
             checkPockets();
 
-            // 4. Desenhar Mira e Taco
             drawAimLine();
 
-            // 5. Detectar Fim do Movimento
             if (isMoving && !currentlyMoving) {
                 isMoving = false;
                 processTurnRules();
@@ -896,20 +860,25 @@
         }
 
         // =========================================================================
-        // 9. EVENTOS DE INTERAÇÃO (MOUSE, TOUCH & RESPONSIVIDADE)
+        // 9. RESPONSIVIDADE PRECISA E EVENTOS
         // =========================================================================
         function resizeCanvas() {
-            const container = canvas.parentElement;
-            const w = container.clientWidth - 10;
-            const aspect = (TABLE_HEIGHT + MARGIN * 2) / (TABLE_WIDTH + MARGIN * 2);
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
 
-            canvas.width = TABLE_WIDTH + MARGIN * 2;
-            canvas.height = TABLE_HEIGHT + MARGIN * 2;
+            const nativeWidth = TABLE_WIDTH + MARGIN * 2;
+            const nativeHeight = TABLE_HEIGHT + MARGIN * 2;
 
-            canvas.style.width = `${w}px`;
-            canvas.style.height = `${w * aspect}px`;
+            // Calcular proporção para caber perfeitamente no container sem cortar
+            const scaleX = containerWidth / nativeWidth;
+            const scaleY = containerHeight / nativeHeight;
+            scale = Math.min(scaleX, scaleY, 1);
 
-            scale = w / canvas.width;
+            canvas.width = nativeWidth;
+            canvas.height = nativeHeight;
+
+            canvas.style.width = `${nativeWidth * scale}px`;
+            canvas.style.height = `${nativeHeight * scale}px`;
         }
 
         function getCanvasPos(e) {
@@ -928,7 +897,6 @@
 
             const pos = getCanvasPos(e);
 
-            // Mover bola branca com a mão (Ball in Hand)
             if (isBallInHand) {
                 const minX = MARGIN + BALL_RADIUS;
                 const maxX = TABLE_WIDTH + MARGIN - BALL_RADIUS;
@@ -940,7 +908,6 @@
                 return;
             }
 
-            // Mira
             aimAngle = Math.atan2(pos.y - cueBall.y, pos.x - cueBall.x);
             isAiming = true;
         }
@@ -954,9 +921,8 @@
             handlePointerMove(e);
         }
 
-        // Event Listeners para Mouse e Touch
         window.addEventListener('resize', resizeCanvas);
-        
+
         canvas.addEventListener('mousemove', handlePointerMove);
         canvas.addEventListener('mousedown', handlePointerDown);
 
@@ -969,7 +935,6 @@
             handlePointerDown(e);
         }, { passive: false });
 
-        // Controles da UI
         powerSlider.addEventListener('input', () => {
             powerVal.innerText = `${powerSlider.value}%`;
         });

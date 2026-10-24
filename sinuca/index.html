@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sinuca Master 8-Ball - IA & Treino</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        body {
+            background: radial-gradient(circle, #1a202c 0%, #0f172a 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0,0,0,0.5);
+            border-radius: 12px;
+        }
+        /* Custom range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: #334155;
+            border-radius: 8px;
+            height: 12px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #f59e0b;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-between p-2 md:p-4 text-white">
+
+    <!-- Header / Placar -->
+    <header class="w-full max-w-4xl bg-slate-800/80 backdrop-blur border border-slate-700/50 rounded-2xl p-3 shadow-xl flex items-center justify-between gap-2 z-10">
+        <!-- Jogador / Humano -->
+        <div id="p1-card" class="flex-1 bg-slate-900/60 p-2.5 rounded-xl border border-amber-500/30 flex flex-col items-center justify-center transition-all">
+            <div class="flex items-center gap-2">
+                <span id="p1-badge" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="font-bold text-xs sm:text-base text-amber-400" id="p1-name">Você</span>
+            </div>
+            <div class="text-xs text-slate-400 mt-1" id="p1-type">Qualquer Bola</div>
+            <div id="p1-potted" class="flex gap-1 mt-1.5 min-h-[22px] flex-wrap justify-center"></div>
+        </div>
+
+        <!-- Status / Centro -->
+        <div class="flex flex-col items-center justify-center px-2 text-center min-w-[120px]">
+            <span class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Sinuca Master</span>
+            <div id="game-status" class="text-sm sm:text-base font-extrabold text-amber-300 my-0.5">Sua Vez</div>
+            <button id="btn-restart" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1 rounded-full border border-slate-500/40 transition active:scale-95">
+                Novo Jogo
+            </button>
+        </div>
+
+        <!-- Oponente (Robô IA ou Treino) -->
+        <div id="p2-card" class="flex-1 bg-slate-900/60 p-2.5 rounded-xl border border-transparent flex flex-col items-center justify-center transition-all opacity-60">
+            <div class="flex items-center gap-2">
+                <span id="p2-badge" class="w-3 h-3 rounded-full bg-slate-600"></span>
+                <span class="font-bold text-xs sm:text-base text-blue-400" id="p2-name">Robô IA</span>
+            </div>
+            <div class="text-xs text-slate-400 mt-1" id="p2-type">Qualquer Bola</div>
+            <div id="p2-potted" class="flex gap-1 mt-1.5 min-h-[22px] flex-wrap justify-center"></div>
+        </div>
+    </header>
+
+    <!-- Área Principal do Canvas -->
+    <main class="flex-1 w-full flex items-center justify-center my-2 relative overflow-hidden max-w-5xl">
+        <canvas id="poolCanvas"></canvas>
+
+        <!-- Overlay de Mensagens do Jogo -->
+        <div id="toast" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 transition-opacity duration-300 bg-black/80 border border-amber-500/50 text-amber-300 px-6 py-3 rounded-2xl text-lg font-bold shadow-2xl text-center z-20">
+            Mensagem
+        </div>
+    </main>
+
+    <!-- Modos de Jogo & Controles Mobile -->
+    <footer class="w-full max-w-4xl bg-slate-800/80 backdrop-blur border border-slate-700/50 rounded-2xl p-3 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 z-10">
+        
+        <!-- Seleção de Modo -->
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+            <label class="text-xs font-medium text-slate-300">Modo:</label>
+            <select id="mode-select" class="bg-slate-900 text-amber-400 text-xs sm:text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-amber-500">
+                <option value="cpu">Contra Robô (IA)</option>
+                <option value="practice">Treino Livre</option>
+            </select>
+        </div>
+
+        <!-- Slider de Força (Excelente para Mobile / Precisão Desktop) -->
+        <div class="flex items-center gap-3 w-full sm:w-1/2">
+            <span class="text-xs font-semibold text-slate-300">Força:</span>
+            <input type="range" id="power-slider" min="5" max="100" value="35" class="w-full cursor-pointer">
+            <span id="power-val" class="text-xs font-bold text-amber-400 min-w-[30px]">35%</span>
+        </div>
+
+        <!-- Botão de Tacada Mobile -->
+        <button id="btn-shoot" class="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm px-6 py-2 rounded-xl shadow-lg transition active:scale-95 disabled:opacity-40">
+            TACADA
+        </button>
+    </footer>
+
+    <!-- Modal Fim de Jogo -->
+    <div id="modal-winner" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-800 border-2 border-amber-500/50 p-6 sm:p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl transform scale-100">
+            <div class="text-4xl mb-2">🏆</div>
+            <h2 id="winner-title" class="text-2xl font-black text-amber-400 mb-2">Você Venceu!</h2>
+            <p id="winner-desc" class="text-slate-300 text-sm mb-6">Encaçapou a bola 8 com sucesso!</p>
+            <button id="btn-modal-restart" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 rounded-xl transition shadow-lg active:scale-95">
+                Jogar Novamente
+            </button>
+        </div>
+    </div>
+
+    <!-- CÓDIGO JS PRINCIPAL DO JOGO -->
+    <script>
+        // =========================================================================
+        // 1. GERENCIADOR DE SOM (SINTETIZADO COM WEB AUDIO API)
+        // =========================================================================
+        class SoundManager {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playHit(volume = 1) {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                // Som grave de impacto sintético
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.08);
+
+                gain.gain.setValueAtTime(Math.min(volume, 1) * 0.8, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playCushion(volume = 1) {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(80, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.1);
+
+                gain.gain.setValueAtTime(Math.min(volume, 1) * 0.5, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            }
+
+            playPocket() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.25);
+
+                gain.gain.setValueAtTime(0.9, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.25);
+            }
+
+            playWin() {
+                if (!this.ctx) return;
+                const notes = [261.63, 329.63, 392.00, 523.25];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+                    
+                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.1 + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(this.ctx.currentTime + idx * 0.1);
+                    osc.stop(this.ctx.currentTime + idx * 0.1 + 0.3);
+                });
+            }
+        }
+
+        const soundManager = new SoundManager();
+
+        // =========================================================================
+        // 2. CONFIGURAÇÕES E ESTADO DO JOGO
+        // =========================================================================
+        const canvas = document.getElementById('poolCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Dimensões internas da mesa (Proporção real 2:1)
+        const TABLE_WIDTH = 1000;
+        const TABLE_HEIGHT = 500;
+        const MARGIN = 50; // Largura das bordas da madeira
+        const BALL_RADIUS = 10.5;
+        const POCKET_RADIUS = 22;
+        const FRICTION = 0.986; // Fricção do pano verde
+
+        // Cores oficiais das bolas de sinuca
+        const BALL_COLORS = {
+            1: '#facc15', // Amarelo
+            2: '#2563eb', // Azul
+            3: '#dc2626', // Vermelho
+            4: '#7e22ce', // Roxo
+            5: '#f97316', // Laranja
+            6: '#16a34a', // Verde
+            7: '#991b1b', // Vinho / Marrom
+            8: '#0f172a', // Preta
+            9: '#facc15', // Listrada Amarela
+            10: '#2563eb', // Listrada Azul
+            11: '#dc2626', // Listrada Vermelha
+            12: '#7e22ce', // Listrada Roxa
+            13: '#f97316', // Listrada Laranja
+            14: '#16a34a', // Listrada Verde
+            15: '#991b1b'  // Listrada Vinho
+        };
+
+        // Estado do jogo
+        let scale = 1;
+        let balls = [];
+        let cueBall = null;
+        let pockets = [];
+        let gameMode = 'cpu'; // 'cpu' ou 'practice'
+        let currentPlayer = 1; // 1 (Você/Humano) ou 2 (Robô IA)
+        let playerTypes = { 1: null, 2: null }; // 'solid', 'stripe'
+        let pottedThisTurn = [];
+        let firstHitBall = null;
+        let isAiming = false;
+        let aimAngle = 0; // Ângulo em radianos
+        let cueDistance = 0; // Para animação do taco recuando
+        let isMoving = false;
+        let isBallInHand = false;
+        let gameOver = false;
+
+        // UI Elementos
+        const p1Card = document.getElementById('p1-card');
+        const p2Card = document.getElementById('p2-card');
+        const p1Name = document.getElementById('p1-name');
+        const p2Name = document.getElementById('p2-name');
+        const p1Type = document.getElementById('p1-type');
+        const p2Type = document.getElementById('p2-type');
+        const p1Potted = document.getElementById('p1-potted');
+        const p2Potted = document.getElementById('p2-potted');
+        const gameStatus = document.getElementById('game-status');
+        const powerSlider = document.getElementById('power-slider');
+        const powerVal = document.getElementById('power-val');
+        const btnShoot = document.getElementById('btn-shoot');
+        const modeSelect = document.getElementById('mode-select');
+        const toast = document.getElementById('toast');
+        const modalWinner = document.getElementById('modal-winner');
+
+        // =========================================================================
+        // 3. CLASSE DA BOLA
+        // =========================================================================
+        class Ball {
+            constructor(x, y, number) {
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.number = number;
+                this.radius = BALL_RADIUS;
+                this.isPotted = false;
+                this.color = number === 0 ? '#ffffff' : BALL_COLORS[number];
+                this.isStripe = number > 8;
+            }
+
+            update() {
+                if (this.isPotted) return;
+
+                // Aplica velocidade
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Aplica atrito/fricção do pano
+                this.vx *= FRICTION;
+                this.vy *= FRICTION;
+
+                // Para movimento residual pequeno
+                if (Math.hypot(this.vx, this.vy) < 0.05) {
+                    this.vx = 0;
+                    this.vy = 0;
+                }
+
+                this.checkCushionCollisions();
+            }
+
+            checkCushionCollisions() {
+                const minX = MARGIN + this.radius;
+                const maxX = TABLE_WIDTH + MARGIN - this.radius;
+                const minY = MARGIN + this.radius;
+                const maxY = TABLE_HEIGHT + MARGIN - this.radius;
+
+                let hit = false;
+
+                if (this.x < minX) {
+                    this.x = minX;
+                    this.vx *= -0.95;
+                    hit = true;
+                } else if (this.x > maxX) {
+                    this.x = maxX;
+                    this.vx *= -0.95;
+                    hit = true;
+                }
+
+                if (this.y < minY) {
+                    this.y = minY;
+                    this.vy *= -0.95;
+                    hit = true;
+                } else if (this.y > maxY) {
+                    this.y = maxY;
+                    this.vy *= -0.95;
+                    hit = true;
+                }
+
+                if (hit) {
+                    const speed = Math.hypot(this.vx, this.vy);
+                    if (speed > 0.5) soundManager.playCushion(speed / 15);
+                }
+            }
+
+            draw() {
+                if (this.isPotted) return;
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Sombra da bola
+                ctx.beginPath();
+                ctx.arc(3, 3, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+                ctx.fill();
+
+                // Corpo principal da bola
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.isStripe ? '#ffffff' : this.color;
+                ctx.fill();
+
+                // Faixa se for bola listrada (9 a 15)
+                if (this.isStripe) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius, -Math.PI / 3, Math.PI / 3);
+                    ctx.arc(0, 0, this.radius, (2 * Math.PI) / 3, (4 * Math.PI) / 3);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                }
+
+                // Círculo interno com número (exceto bola branca)
+                if (this.number !== 0) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius * 0.45, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+
+                    // Número
+                    ctx.fillStyle = '#000000';
+                    ctx.font = 'bold 8px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.number.toString(), 0, 0.5);
+                }
+
+                // Brilho 3D (Gradiente Radial)
+                const grad = ctx.createRadialGradient(
+                    -this.radius * 0.3, -this.radius * 0.3, 1,
+                    0, 0, this.radius
+                );
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+                grad.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // =========================================================================
+        // 4. INICIALIZAÇÃO DA MESA E BOLAS
+        // =========================================================================
+        function initPockets() {
+            pockets = [
+                { x: MARGIN + 4, y: MARGIN + 4 }, // Canto Superior Esquerdo
+                { x: MARGIN + TABLE_WIDTH / 2, y: MARGIN - 2 }, // Meio Superior
+                { x: MARGIN + TABLE_WIDTH - 4, y: MARGIN + 4 }, // Canto Superior Direito
+                { x: MARGIN + 4, y: MARGIN + TABLE_HEIGHT - 4 }, // Canto Inferior Esquerdo
+                { x: MARGIN + TABLE_WIDTH / 2, y: MARGIN + TABLE_HEIGHT + 2 }, // Meio Inferior
+                { x: MARGIN + TABLE_WIDTH - 4, y: MARGIN + TABLE_HEIGHT - 4 } // Canto Inferior Direito
+            ];
+        }
+
+        function setupRack() {
+            balls = [];
+            
+            // Bola Branca (Cue Ball)
+            cueBall = new Ball(MARGIN + TABLE_WIDTH * 0.25, MARGIN + TABLE_HEIGHT / 2, 0);
+            balls.push(cueBall);
+
+            // Triângulo de Bolas (1 a 15)
+            const startX = MARGIN + TABLE_WIDTH * 0.72;
+            const startY = MARGIN + TABLE_HEIGHT / 2;
+            
+            // Ordem estratégica (Bola 8 no meio, cantos mesclados)
+            const rackOrder = [
+                1,
+                10, 2,
+                3, 8, 11,
+                12, 5, 14, 4,
+                13, 7, 15, 6, 9
+            ];
+
+            let index = 0;
+            const rowSpacing = BALL_RADIUS * Math.sqrt(3) + 0.5;
+
+            for (let col = 0; col < 5; col++) {
+                const x = startX + col * rowSpacing;
+                const startRowY = startY - col * BALL_RADIUS;
+
+                for (let row = 0; row <= col; row++) {
+                    const y = startRowY + row * (BALL_RADIUS * 2 + 0.5);
+                    const ballNum = rackOrder[index++];
+                    balls.push(new Ball(x, y, ballNum));
+                }
+            }
+        }
+
+        function resetGame() {
+            gameMode = modeSelect.value;
+            currentPlayer = 1;
+            playerTypes = { 1: null, 2: null };
+            isBallInHand = false;
+            gameOver = false;
+            setupRack();
+            updateUI();
+            showToast("Novo jogo iniciado!");
+        }
+
+        // =========================================================================
+        // 5. FÍSICA E COLISÕES
+        // =========================================================================
+        function resolveBallCollisions() {
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    const b1 = balls[i];
+                    const b2 = balls[j];
+
+                    if (b1.isPotted || b2.isPotted) continue;
+
+                    const dx = b2.x - b1.x;
+                    const dy = b2.y - b1.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minDist = b1.radius + b2.radius;
+
+                    if (dist < minDist) {
+                        // Registrar primeira bola tocada pela branca
+                        if (b1 === cueBall && !firstHitBall) firstHitBall = b2;
+                        if (b2 === cueBall && !firstHitBall) firstHitBall = b1;
+
+                        // Vetor Normal
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+
+                        // Correção de Sobreposição (Separar bolas)
+                        const overlap = minDist - dist;
+                        b1.x -= nx * (overlap / 2);
+                        b1.y -= ny * (overlap / 2);
+                        b2.x += nx * (overlap / 2);
+                        b2.y += ny * (overlap / 2);
+
+                        // Cálculo da Colisão Elástica em 2D
+                        const kx = b1.vx - b2.vx;
+                        const ky = b1.vy - b2.vy;
+                        const p = 2 * (nx * kx + ny * ky) / 2; // Massas iguais = 1
+
+                        b1.vx -= p * nx;
+                        b1.vy -= p * ny;
+                        b2.vx += p * nx;
+                        b2.vy += p * ny;
+
+                        // Tocar som de impacto proporcional à força
+                        const impactSpeed = Math.hypot(kx, ky);
+                        if (impactSpeed > 0.3) {
+                            soundManager.playHit(impactSpeed / 12);
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkPockets() {
+            balls.forEach(ball => {
+                if (ball.isPotted) return;
+
+                pockets.forEach(pocket => {
+                    const dist = Math.hypot(ball.x - pocket.x, ball.y - pocket.y);
+                    if (dist < POCKET_RADIUS) {
+                        ball.isPotted = true;
+                        ball.vx = 0;
+                        ball.vy = 0;
+
+                        if (ball !== cueBall) {
+                            pottedThisTurn.push(ball);
+                            soundManager.playPocket();
+                        } else {
+                            soundManager.playPocket();
+                        }
+                    }
+                });
+            });
+        }
+
+        // =========================================================================
+        // 6. REGRAS DO JOGO E MUDANÇA DE TURNO
+        // =========================================================================
+        function processTurnRules() {
+            let switchTurn = true;
+            let foul = false;
+
+            // 1. Bola Branca Encaçapada (Falta)
+            if (cueBall.isPotted) {
+                foul = true;
+                showToast("Falta! Bola branca caiu.");
+                cueBall.isPotted = false;
+                cueBall.vx = 0;
+                cueBall.vy = 0;
+                cueBall.x = MARGIN + TABLE_WIDTH * 0.25;
+                cueBall.y = MARGIN + TABLE_HEIGHT / 2;
+                isBallInHand = true;
+            }
+
+            // 2. Nenhuma Bola Atingida
+            if (!firstHitBall && !cueBall.isPotted) {
+                foul = true;
+                showToast("Falta! Nenhuma bola foi atingida.");
+                isBallInHand = true;
+            }
+
+            // 3. Checar Bola 8 (Preta)
+            const eightBallPotted = pottedThisTurn.some(b => b.number === 8);
+            if (eightBallPotted) {
+                const pType = playerTypes[currentPlayer];
+                const myRemaining = balls.filter(b => !b.isPotted && b.number !== 0 && b.number !== 8 && 
+                    (pType === 'solid' ? b.number <= 7 : b.number >= 9)
+                );
+
+                if (myRemaining.length === 0 && !foul) {
+                    // Vitória!
+                    handleWin(currentPlayer, currentPlayer === 1 ? "Você encaçapou a Bola 8 perfeitamente!" : "O Robô IA encaçapou a Bola 8 perfeitamente!");
+                } else {
+                    // Derrota por encaçapar a 8 na hora errada ou com falta
+                    const winner = currentPlayer === 1 ? 2 : 1;
+                    handleWin(winner, currentPlayer === 1 ? "Você encaçapou a Bola 8 indevidamente!" : "O Robô IA encaçapou a Bola 8 indevidamente!");
+                }
+                return;
+            }
+
+            // 4. Atribuir Grupos (Lisas / Listradas) na primeira bola encaçapada
+            const validPotted = pottedThisTurn.filter(b => b.number !== 0 && b.number !== 8);
+            if (!playerTypes[1] && validPotted.length > 0 && !foul) {
+                const firstPotted = validPotted[0];
+                if (firstPotted.number <= 7) {
+                    playerTypes[currentPlayer] = 'solid';
+                    playerTypes[currentPlayer === 1 ? 2 : 1] = 'stripe';
+                } else {
+                    playerTypes[currentPlayer] = 'stripe';
+                    playerTypes[currentPlayer === 1 ? 2 : 1] = 'solid';
+                }
+                const pName = currentPlayer === 1 ? "Você" : "Robô IA";
+                showToast(`${pName} ficou com as ${playerTypes[currentPlayer] === 'solid' ? 'Lisas (1-7)' : 'Listradas (9-15)'}!`);
+            }
+
+            // 5. Verificar se acertou sua própria bola primeiro (Falta)
+            if (firstHitBall && playerTypes[currentPlayer] && !foul) {
+                const targetType = playerTypes[currentPlayer];
+                const hitType = firstHitBall.number <= 7 ? 'solid' : 'stripe';
+                
+                // Checar se restam bolas do jogador antes da 8
+                const myRemaining = balls.filter(b => !b.isPotted && b.number !== 0 && b.number !== 8 && 
+                    (targetType === 'solid' ? b.number <= 7 : b.number >= 9)
+                );
+
+                if (myRemaining.length > 0 && hitType !== targetType && firstHitBall.number !== 8) {
+                    foul = true;
+                    showToast("Falta! Atingiu a bola do oponente primeiro.");
+                    isBallInHand = true;
+                }
+            }
+
+            // 6. Manter a vez se encaçapou a bola certa sem cometer falta
+            if (!foul && validPotted.length > 0) {
+                const pType = playerTypes[currentPlayer];
+                if (!pType) {
+                    switchTurn = false; // Bola livre
+                } else {
+                    const hitCorrectGroup = validPotted.some(b => 
+                        pType === 'solid' ? b.number <= 7 : b.number >= 9
+                    );
+                    if (hitCorrectGroup) switchTurn = false;
+                }
+            }
+
+            // Alternar Turno
+            if (switchTurn && gameMode !== 'practice') {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+            }
+
+            updateUI();
+
+            // Turno da IA
+            if (gameMode === 'cpu' && currentPlayer === 2 && !gameOver) {
+                setTimeout(playCPUTurn, 1000);
+            }
+        }
+
+        function handleWin(winner, reason) {
+            gameOver = true;
+            soundManager.playWin();
+            const winnerText = winner === 1 ? "Você Venceu! 🎉" : "Robô IA Venceu! 🤖";
+            document.getElementById('winner-title').innerText = winnerText;
+            document.getElementById('winner-desc').innerText = reason;
+            modalWinner.classList.remove('hidden');
+        }
+
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 2200);
+        }
+
+        function updateUI() {
+            // Atualizar nomes
+            p1Name.innerText = "Você";
+            p2Name.innerText = gameMode === 'practice' ? "Treino" : "Robô IA";
+
+            // Atualizar Cartões de Vez
+            if (gameMode === 'practice') {
+                p1Card.classList.remove('opacity-60');
+                p1Card.classList.add('border-amber-500/80', 'bg-slate-800');
+                p2Card.classList.add('opacity-60', 'border-transparent');
+                document.getElementById('p1-badge').className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
+                document.getElementById('p2-badge').className = "w-3 h-3 rounded-full bg-slate-600";
+                gameStatus.innerText = "Treino Livre";
+            } else if (currentPlayer === 1) {
+                p1Card.classList.remove('opacity-60', 'border-transparent');
+                p1Card.classList.add('border-amber-500/80', 'bg-slate-800');
+                p2Card.classList.add('opacity-60', 'border-transparent');
+                document.getElementById('p1-badge').className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
+                document.getElementById('p2-badge').className = "w-3 h-3 rounded-full bg-slate-600";
+                gameStatus.innerText = "Sua Vez";
+            } else {
+                p2Card.classList.remove('opacity-60', 'border-transparent');
+                p2Card.classList.add('border-blue-500/80', 'bg-slate-800');
+                p1Card.classList.add('opacity-60', 'border-transparent');
+                document.getElementById('p2-badge').className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
+                document.getElementById('p1-badge').className = "w-3 h-3 rounded-full bg-slate-600";
+                gameStatus.innerText = "Vez do Robô IA";
+            }
+
+            // Atualizar Tipos de Bola
+            p1Type.innerText = playerTypes[1] ? (playerTypes[1] === 'solid' ? 'Lisas (1-7)' : 'Listradas (9-15)') : 'Qualquer Bola';
+            p2Type.innerText = playerTypes[2] ? (playerTypes[2] === 'solid' ? 'Lisas (1-7)' : 'Listradas (9-15)') : 'Qualquer Bola';
+
+            // Atualizar bolas encaçapadas na UI
+            renderPottedBallsUI(p1Potted, 1);
+            renderPottedBallsUI(p2Potted, 2);
+        }
+
+        function renderPottedBallsUI(container, player) {
+            container.innerHTML = '';
+            const type = playerTypes[player];
+            if (!type) return;
+
+            const potted = balls.filter(b => b.isPotted && b.number !== 0 && b.number !== 8 &&
+                (type === 'solid' ? b.number <= 7 : b.number >= 9)
+            );
+
+            potted.forEach(b => {
+                const dot = document.createElement('div');
+                dot.className = 'w-4 h-4 rounded-full border border-white/40 flex items-center justify-center text-[9px] font-bold text-black shadow';
+                dot.style.backgroundColor = b.color;
+                dot.innerText = b.number;
+                container.appendChild(dot);
+            });
+        }
+
+        // =========================================================================
+        // 7. INTELIGÊNCIA ARTIFICIAL (BOT CPU)
+        // =========================================================================
+        function playCPUTurn() {
+            if (isMoving || gameOver || gameMode !== 'cpu') return;
+
+            // Encontrar alvos válidos para a CPU
+            const cpuType = playerTypes[2];
+            let validTargets = balls.filter(b => !b.isPotted && b.number !== 0 && b.number !== 8 &&
+                (!cpuType || (cpuType === 'solid' ? b.number <= 7 : b.number >= 9))
+            );
+
+            // Se não houver bolas normais, mirar na 8
+            if (validTargets.length === 0) {
+                const eight = balls.find(b => b.number === 8 && !b.isPotted);
+                if (eight) validTargets = [eight];
+            }
+
+            if (validTargets.length === 0) return;
+
+            // Escolher uma bola alvo aleatória/próxima
+            const target = validTargets[Math.floor(Math.random() * validTargets.length)];
+            
+            // Adicionar um pequeno erro na mira para parecer humano
+            const angleToTarget = Math.atan2(target.y - cueBall.y, target.x - cueBall.x);
+            const errorMargin = (Math.random() - 0.5) * 0.15;
+            aimAngle = angleToTarget + errorMargin;
+
+            // Tacada
+            const power = 30 + Math.random() * 45;
+            shoot(power);
+        }
+
+        // =========================================================================
+        // 8. TACADA E RENDERING (CANVAS)
+        // =========================================================================
+        function shoot(power) {
+            if (isMoving) return;
+
+            soundManager.init();
+
+            const impulse = power * 0.35;
+            cueBall.vx = Math.cos(aimAngle) * impulse;
+            cueBall.vy = Math.sin(aimAngle) * impulse;
+
+            isMoving = true;
+            isAiming = false;
+            pottedThisTurn = [];
+            firstHitBall = null;
+
+            // Som de tacada do taco na bola
+            soundManager.playHit(power / 60);
+        }
+
+        function drawTable() {
+            // Fundo / Borda de Madeira Externa
+            ctx.fillStyle = '#291d0e';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, canvas.width, canvas.height, 20);
+            ctx.fill();
+
+            // Acabamento interno da madeira
+            ctx.fillStyle = '#422a10';
+            ctx.beginPath();
+            ctx.roundRect(MARGIN - 15, MARGIN - 15, TABLE_WIDTH + 30, TABLE_HEIGHT + 30, 10);
+            ctx.fill();
+
+            // Pano Verde (Área de jogo)
+            ctx.fillStyle = '#056537';
+            ctx.fillRect(MARGIN, MARGIN, TABLE_WIDTH, TABLE_HEIGHT);
+
+            // Linha de Cabeça e Ponto Central (Headstring / Hand Line)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(MARGIN + TABLE_WIDTH * 0.25, MARGIN);
+            ctx.lineTo(MARGIN + TABLE_WIDTH * 0.25, MARGIN + TABLE_HEIGHT);
+            ctx.stroke();
+
+            // Caçapas (Pockets)
+            pockets.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            });
+        }
+
+        function drawAimLine() {
+            if (!isAiming || isMoving || (gameMode === 'cpu' && currentPlayer === 2)) return;
+
+            const maxLineDist = 400;
+            const dirX = Math.cos(aimAngle);
+            const dirY = Math.sin(aimAngle);
+
+            // Mira tracejada principal
+            ctx.save();
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(cueBall.x, cueBall.y);
+            ctx.lineTo(cueBall.x + dirX * maxLineDist, cueBall.y + dirY * maxLineDist);
+            ctx.stroke();
+            ctx.restore();
+
+            // Taco de Sinuca
+            const pVal = parseFloat(powerSlider.value);
+            const offset = 20 + (pVal * 0.5); // Recuo dinâmico do taco com base na força
+
+            ctx.save();
+            ctx.translate(cueBall.x, cueBall.y);
+            ctx.rotate(aimAngle + Math.PI); // Aponta para trás
+
+            // Gradiente do Taco
+            const cueGrad = ctx.createLinearGradient(offset, 0, offset + 320, 0);
+            cueGrad.addColorStop(0, '#fef08a'); // Ponta
+            cueGrad.addColorStop(0.02, '#78350f');
+            cueGrad.addColorStop(0.7, '#d97706');
+            cueGrad.addColorStop(1, '#1e293b'); // Cabo
+
+            ctx.fillStyle = cueGrad;
+            ctx.beginPath();
+            ctx.moveTo(offset, -2.5);
+            ctx.lineTo(offset + 320, -5);
+            ctx.lineTo(offset + 320, 5);
+            ctx.lineTo(offset, 2.5);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Desenhar Mesa
+            drawTable();
+
+            // 2. Atualizar e Desenhar Bolas
+            let currentlyMoving = false;
+            balls.forEach(ball => {
+                ball.update();
+                ball.draw();
+                if (Math.hypot(ball.vx, ball.vy) > 0) {
+                    currentlyMoving = true;
+                }
+            });
+
+            // 3. Colisões
+            resolveBallCollisions();
+            checkPockets();
+
+            // 4. Desenhar Mira e Taco
+            drawAimLine();
+
+            // 5. Detectar Fim do Movimento
+            if (isMoving && !currentlyMoving) {
+                isMoving = false;
+                processTurnRules();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // =========================================================================
+        // 9. EVENTOS DE INTERAÇÃO (MOUSE, TOUCH & RESPONSIVIDADE)
+        // =========================================================================
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const w = container.clientWidth - 10;
+            const aspect = (TABLE_HEIGHT + MARGIN * 2) / (TABLE_WIDTH + MARGIN * 2);
+
+            canvas.width = TABLE_WIDTH + MARGIN * 2;
+            canvas.height = TABLE_HEIGHT + MARGIN * 2;
+
+            canvas.style.width = `${w}px`;
+            canvas.style.height = `${w * aspect}px`;
+
+            scale = w / canvas.width;
+        }
+
+        function getCanvasPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            return {
+                x: (clientX - rect.left) / scale,
+                y: (clientY - rect.top) / scale
+            };
+        }
+
+        function handlePointerMove(e) {
+            if (isMoving || (gameMode === 'cpu' && currentPlayer === 2)) return;
+
+            const pos = getCanvasPos(e);
+
+            // Mover bola branca com a mão (Ball in Hand)
+            if (isBallInHand) {
+                const minX = MARGIN + BALL_RADIUS;
+                const maxX = TABLE_WIDTH + MARGIN - BALL_RADIUS;
+                const minY = MARGIN + BALL_RADIUS;
+                const maxY = TABLE_HEIGHT + MARGIN - BALL_RADIUS;
+
+                cueBall.x = Math.max(minX, Math.min(maxX, pos.x));
+                cueBall.y = Math.max(minY, Math.min(maxY, pos.y));
+                return;
+            }
+
+            // Mira
+            aimAngle = Math.atan2(pos.y - cueBall.y, pos.x - cueBall.x);
+            isAiming = true;
+        }
+
+        function handlePointerDown(e) {
+            if (isBallInHand) {
+                isBallInHand = false;
+                showToast("Bola posicionada!");
+                return;
+            }
+            handlePointerMove(e);
+        }
+
+        // Event Listeners para Mouse e Touch
+        window.addEventListener('resize', resizeCanvas);
+        
+        canvas.addEventListener('mousemove', handlePointerMove);
+        canvas.addEventListener('mousedown', handlePointerDown);
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            handlePointerMove(e);
+        }, { passive: false });
+
+        canvas.addEventListener('touchstart', (e) => {
+            handlePointerDown(e);
+        }, { passive: false });
+
+        // Controles da UI
+        powerSlider.addEventListener('input', () => {
+            powerVal.innerText = `${powerSlider.value}%`;
+        });
+
+        btnShoot.addEventListener('click', () => {
+            if (!isMoving && (gameMode !== 'cpu' || currentPlayer === 1)) {
+                shoot(parseFloat(powerSlider.value));
+            }
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', resetGame);
+        document.getElementById('btn-modal-restart').addEventListener('click', () => {
+            modalWinner.classList.add('hidden');
+            resetGame();
+        });
+
+        modeSelect.addEventListener('change', resetGame);
+
+        // =========================================================================
+        // 10. INICIALIZAÇÃO
+        // =========================================================================
+        window.onload = () => {
+            initPockets();
+            resizeCanvas();
+            resetGame();
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>

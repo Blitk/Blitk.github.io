@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Sinuca 8-Ball Pro</title>
+  <title>Sinuca 8-Ball Pro HD</title>
   
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -11,7 +11,6 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <style>
-    /* Estilos personalizados para prevenção de zoom/scroll no touch */
     * {
       touch-action: manipulation;
       user-select: none;
@@ -23,14 +22,13 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: #0d1117;
+      background-color: #0b0f17;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     canvas {
       display: block;
       touch-action: none;
     }
-    /* Estilização customizada da barra de força do slider */
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
       height: 24px;
@@ -52,7 +50,7 @@
 </head>
 <body class="bg-gray-950 text-white select-none">
 
-  <!-- Container Principal ajustado para viewport mobile dinâmico -->
+  <!-- Container Principal -->
   <div class="w-full h-full min-h-[100dvh] max-h-[100dvh] flex flex-col justify-between items-center p-2 box-border pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-[calc(0.5rem+env(safe-area-inset-top))] overflow-hidden">
     
     <!-- HEADER / PLACAR -->
@@ -106,26 +104,20 @@
     <!-- ÁREA DO CANVAS (MESA DE SINUCA) -->
     <main id="canvas-container" class="w-full flex-1 flex items-center justify-center my-1 relative overflow-hidden">
       <canvas id="pool-canvas" class="rounded-2xl shadow-2xl border-4 border-amber-950/80 cursor-crosshair"></canvas>
-      
-      <!-- Dica de instrução Desktop/Mobile overlay -->
-      <div id="desktop-hint" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-black/60 backdrop-blur-sm text-gray-300 text-[11px] px-3 py-1 rounded-full border border-white/10 pointer-events-none transition-opacity duration-500 opacity-90 hidden md:block">
-        🖱️ <b>PC:</b> Arraste para tras com o botão esquerdo para puxar a taco e solte para dar a tacada.
-      </div>
     </main>
 
     <!-- PAINEL INFERIOR / CONTROLES -->
     <footer class="w-full max-w-4xl bg-gray-900/90 border border-gray-800 rounded-xl p-2 md:p-3 flex items-center justify-between gap-3 shadow-xl flex-shrink-0 z-10 backdrop-blur-md">
       
-      <!-- Seletor / Indicador de Bolas Encaçapadas -->
-      <div id="potted-balls-container" class="flex items-center gap-1 overflow-x-auto max-w-[30%] py-1">
-        <!-- Bolas caídas aparecerão aqui dinamicamente -->
+      <!-- Indicador de Bolas Encaçapadas -->
+      <div id="potted-balls-container" class="flex items-center gap-1 overflow-x-auto max-w-[25%] py-1">
       </div>
 
-      <!-- Slider de Força (Excelente para Mobile) -->
+      <!-- Slider de Força -->
       <div class="flex-1 flex flex-col justify-center max-w-md px-2">
         <div class="flex justify-between items-center text-[11px] md:text-xs text-gray-400 mb-1 font-semibold">
           <span>Força da Tacada</span>
-          <span id="power-percentage" class="text-amber-400">0%</span>
+          <span id="power-percentage" class="text-amber-400 font-bold">0%</span>
         </div>
         <div class="flex items-center gap-2">
           <i data-lucide="zap-off" class="w-4 h-4 text-gray-500"></i>
@@ -134,10 +126,10 @@
         </div>
       </div>
 
-      <!-- Botão Tacar (Mobile/Touch) -->
-      <button id="btn-shoot" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-gray-950 font-black px-5 py-2.5 rounded-xl shadow-lg flex items-center gap-2 border border-amber-400/50 transition-all">
+      <!-- Botão TACAR -->
+      <button id="btn-shoot" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-gray-950 font-black px-5 py-2.5 rounded-xl shadow-lg flex items-center gap-2 border border-amber-400/50 transition-all cursor-pointer">
         <i data-lucide="target" class="w-5 h-5"></i>
-        <span class="text-sm uppercase tracking-wider hidden sm:inline">TACAR</span>
+        <span class="text-sm uppercase tracking-wider">TACAR</span>
       </button>
 
     </footer>
@@ -219,7 +211,7 @@
 
     const sfx = new SoundEffects();
 
-    // --- CORES DAS BOLAS DA SINUCA ---
+    // --- CORES DAS BOLAS ---
     const BALL_COLORS = {
       0: '#FFFFFF', // Branca
       1: '#FACC15', // 1 Amarela
@@ -337,25 +329,25 @@
       }
     }
 
-    // --- GAME ENGINE / LÓGICA PRINCIPAL ---
+    // --- GAME ENGINE ---
     class Game {
       constructor() {
         this.canvas = document.getElementById('pool-canvas');
         this.ctx = this.canvas.getContext('2d');
         this.container = document.getElementById('canvas-container');
 
-        // Modos: 'cpu', 'practice'
         this.mode = 'cpu';
-        this.currentPlayer = 1; // 1 = P1, 2 = CPU/P2
-        this.p1Type = null; // 'solid' ou 'striped'
+        this.currentPlayer = 1;
+        this.p1Type = null;
         this.p2Type = null;
-        this.turnState = 'aiming'; // 'aiming', 'shooting', 'moving', 'ballInHand', 'gameOver'
+        this.turnState = 'aiming';
 
         this.balls = [];
         this.pockets = [];
         this.tableBounds = {};
         this.ballRadius = 12;
         this.friction = 0.988;
+        this.dpr = window.devicePixelRatio || 1;
 
         // Taco / Mira
         this.aimAngle = 0;
@@ -406,7 +398,8 @@
         });
 
         document.getElementById('btn-shoot').addEventListener('click', () => {
-          if (this.turnState === 'aiming' && this.power > 5 && (this.mode === 'practice' || this.currentPlayer === 1)) {
+          if (this.turnState === 'aiming' && (this.mode === 'practice' || this.currentPlayer === 1)) {
+            if (this.power <= 5) this.power = 50; // Se clicou sem ajustar a barra, dispara com 50%
             this.shoot();
           }
         });
@@ -428,33 +421,40 @@
 
       resize() {
         const rect = this.container.getBoundingClientRect();
-        let w = rect.width;
-        let h = rect.height;
+        let displayWidth = rect.width;
+        let displayHeight = rect.height;
 
-        // Proporção 2:1 da Mesa de Sinuca
-        if (w / h > 2) {
-          w = h * 2;
+        if (displayWidth / displayHeight > 2) {
+          displayWidth = displayHeight * 2;
         } else {
-          h = w / 2;
+          displayHeight = displayWidth / 2;
         }
 
-        this.canvas.width = Math.max(300, Math.floor(w));
-        this.canvas.height = Math.max(150, Math.floor(h));
+        this.dpr = window.devicePixelRatio || 1;
 
-        // Recalcular Limites
-        const border = this.canvas.width * 0.05;
+        // Resolução HD real no Canvas
+        this.canvas.width = Math.floor(displayWidth * this.dpr);
+        this.canvas.height = Math.floor(displayHeight * this.dpr);
+
+        // Ajuste no CSS do tamanho visível
+        this.canvas.style.width = `${Math.floor(displayWidth)}px`;
+        this.canvas.style.height = `${Math.floor(displayHeight)}px`;
+
+        // Ajustar matriz de transformação do contexto para Retina/HD
+        this.ctx.scale(this.dpr, this.dpr);
+
+        const border = displayWidth * 0.05;
         this.tableBounds = {
           left: border,
           top: border,
-          right: this.canvas.width - border,
-          bottom: this.canvas.height - border,
-          width: this.canvas.width - border * 2,
-          height: this.canvas.height - border * 2
+          right: displayWidth - border,
+          bottom: displayHeight - border,
+          width: displayWidth - border * 2,
+          height: displayHeight - border * 2
         };
 
         this.ballRadius = this.tableBounds.width / 70;
 
-        // Caçapas nas 6 Posições
         const pocketRadius = this.ballRadius * 1.8;
         const tb = this.tableBounds;
         this.pockets = [
@@ -495,19 +495,16 @@
         this.balls = [];
         const tb = this.tableBounds;
         
-        // Bola Branca (0)
         const cueX = tb.left + tb.width * 0.25;
         const cueY = tb.top + tb.height * 0.5;
         this.balls.push(new Ball(0, cueX, cueY, this.ballRadius));
 
-        // Triângulo de Bolas (1 a 15)
         const rackX = tb.left + tb.width * 0.7;
         const rackY = tb.top + tb.height * 0.5;
         const r = this.ballRadius;
         const dx = r * Math.sqrt(3) + 0.5;
         const dy = r + 0.5;
 
-        // Distribuição clássica do Triângulo (8 no meio)
         const rackOrder = [
           1,
           10, 2,
@@ -533,8 +530,8 @@
           const clientX = e.touches ? e.touches[0].clientX : e.clientX;
           const clientY = e.touches ? e.touches[0].clientY : e.clientY;
           return {
-            x: (clientX - rect.left) * (this.canvas.width / rect.width),
-            y: (clientY - rect.top) * (this.canvas.height / rect.height)
+            x: clientX - rect.left,
+            y: clientY - rect.top
           };
         };
 
@@ -566,20 +563,15 @@
 
           if (this.turnState === 'aiming') {
             if (this.isMouseDown) {
-              // Ajusta a Mira e Força arrastando
               const dx = pos.x - this.dragStartPos.x;
               const dy = pos.y - this.dragStartPos.y;
               const dist = Math.hypot(dx, dy);
 
-              // Ângulo inverso ao arrasto (como um estilingue)
               this.aimAngle = Math.atan2(-dy, -dx);
-
-              // Calcula força pelo arrasto
               this.power = Math.min(100, Math.max(0, (dist / 1.5)));
               document.getElementById('power-range').value = this.power;
               document.getElementById('power-percentage').innerText = `${Math.round(this.power)}%`;
             } else {
-              // Mira direta pelo movimento do ponteiro
               this.aimAngle = Math.atan2(pos.y - cue.y, pos.x - cue.x);
             }
           }
@@ -587,7 +579,6 @@
 
         const handleEnd = () => {
           if (this.turnState === 'ballInHand') {
-            // Reposicionou a bola branca
             let collision = false;
             const cue = this.balls[0];
             for (let b of this.balls) {
@@ -613,12 +604,10 @@
           }
         };
 
-        // Eventos Mouse
         this.canvas.addEventListener('mousedown', (e) => handleStart(getPos(e)));
         window.addEventListener('mousemove', (e) => handleMove(getPos(e)));
         window.addEventListener('mouseup', () => handleEnd());
 
-        // Eventos Touch (Mobile)
         this.canvas.addEventListener('touchstart', (e) => {
           e.preventDefault();
           handleStart(getPos(e));
@@ -659,11 +648,9 @@
         setTimeout(() => {
           const cue = this.balls[0];
           
-          // Encontrar alvos válidos para a CPU
           let validTargets = this.balls.filter(b => {
             if (!b.active || b.isCue) return false;
             if (b.isEight) {
-              // Só pode mirar na 8 se limpou a mesa
               const myType = this.currentPlayer === 1 ? this.p1Type : this.p2Type;
               const remaining = this.balls.filter(ball => ball.active && !ball.isCue && !ball.isEight &&
                 ((myType === 'solid' && !ball.isStriped) || (myType === 'striped' && ball.isStriped))
@@ -677,7 +664,6 @@
 
           if (validTargets.length === 0) validTargets = this.balls.filter(b => b.active && !b.isCue);
 
-          // Escolher bola mais próxima
           let target = validTargets[0];
           let minDist = Infinity;
           for (let b of validTargets) {
@@ -689,7 +675,6 @@
           }
 
           if (target) {
-            // Pequeno erro de precisão para parecer humano
             const angle = Math.atan2(target.y - cue.y, target.x - cue.x) + (Math.random() - 0.5) * 0.08;
             this.aimAngle = angle;
             this.power = 40 + Math.random() * 45;
@@ -703,14 +688,12 @@
 
         let ballsMoving = false;
 
-        // Atualizar Posições
         for (let ball of this.balls) {
           if (!ball.active || ball.potted) continue;
 
           ball.update(this.friction);
           if (Math.hypot(ball.vx, ball.vy) > 0) ballsMoving = true;
 
-          // Colisão com Caçapas
           for (let pocket of this.pockets) {
             if (Math.hypot(ball.x - pocket.x, ball.y - pocket.y) < pocket.r) {
               this.potBall(ball);
@@ -718,7 +701,6 @@
             }
           }
 
-          // Colisão com Bordas
           const tb = this.tableBounds;
           if (ball.x - ball.radius < tb.left) {
             ball.x = tb.left + ball.radius;
@@ -741,7 +723,6 @@
           }
         }
 
-        // Colisões entre Bolas
         for (let i = 0; i < this.balls.length; i++) {
           for (let j = i + 1; j < this.balls.length; j++) {
             const b1 = this.balls[i];
@@ -754,15 +735,12 @@
             const dist = Math.hypot(dx, dy);
 
             if (dist < b1.radius + b2.radius) {
-              // Registra a primeira bola atingida pela branca
               if (b1.isCue && !this.firstBallHit) this.firstBallHit = b2;
               if (b2.isCue && !this.firstBallHit) this.firstBallHit = b1;
 
-              // Som de colisão proporcional à velocidade
               const impactVel = Math.hypot(b1.vx - b2.vx, b1.vy - b2.vy);
               sfx.playHit(impactVel / 20);
 
-              // Resolução de Sobreposição
               const overlap = (b1.radius + b2.radius) - dist;
               const nx = dx / dist;
               const ny = dy / dist;
@@ -772,7 +750,6 @@
               b2.x += nx * overlap * 0.5;
               b2.y += ny * overlap * 0.5;
 
-              // Físicas de Colisão Elástica 2D
               const kx = b1.vx - b2.vx;
               const ky = b1.vy - b2.vy;
               const p = 2 * (nx * kx + ny * ky) / 2;
@@ -785,7 +762,6 @@
           }
         }
 
-        // Quando todas as bolas pararem
         if (!ballsMoving) {
           this.evaluateTurn();
         }
@@ -818,7 +794,6 @@
       evaluateTurn() {
         const cue = this.balls[0];
 
-        // 1. Bola Branca Encaçapada (Falta)
         if (cue.potted) {
           cue.potted = false;
           cue.active = true;
@@ -829,12 +804,10 @@
           this.foul = true;
         }
 
-        // 2. Não tocou em nenhuma bola (Falta)
         if (!this.firstBallHit && !this.foul) {
           this.foul = true;
         }
 
-        // 3. Bola 8 Encaçapada
         const pottedEight = this.pottedThisTurn.find(b => b.isEight);
         if (pottedEight) {
           const myType = this.currentPlayer === 1 ? this.p1Type : this.p2Type;
@@ -850,7 +823,6 @@
           return;
         }
 
-        // 4. Atribuir Grupos (Lisas / Listradas) no primeiro encaçapamento
         if (!this.p1Type && this.pottedThisTurn.length > 0) {
           const validBall = this.pottedThisTurn.find(b => !b.isCue && !b.isEight);
           if (validBall) {
@@ -864,7 +836,6 @@
           }
         }
 
-        // 5. Determinar se mantém o turno ou passa a vez
         let continueTurn = false;
         if (!this.foul && this.pottedThisTurn.length > 0) {
           const myType = this.currentPlayer === 1 ? this.p1Type : this.p2Type;
@@ -882,7 +853,6 @@
           this.turnState = this.foul ? 'ballInHand' : 'aiming';
           this.message = this.foul ? 'Falta! Bola na Mão' : 'Sua Vez';
         } else {
-          // Modo VS CPU
           if (this.foul) {
             this.switchPlayer();
             this.turnState = 'ballInHand';
@@ -940,23 +910,23 @@
 
       drawTable() {
         const ctx = this.ctx;
-        const w = this.canvas.width;
-        const h = this.canvas.height;
+        const w = this.canvas.width / this.dpr;
+        const h = this.canvas.height / this.dpr;
         const tb = this.tableBounds;
 
-        // Fundo Madeira/Borda da Mesa
+        // Borda da Mesa
         ctx.fillStyle = '#2d1810';
         ctx.fillRect(0, 0, w, h);
 
-        // Moldura Interna da Mesa
+        // Moldura Interna
         ctx.fillStyle = '#422213';
         ctx.fillRect(tb.left - 10, tb.top - 10, tb.width + 20, tb.height + 20);
 
-        // Feltro Verde da Mesa
+        // Feltro Verde
         ctx.fillStyle = '#0f6338';
         ctx.fillRect(tb.left, tb.top, tb.width, tb.height);
 
-        // Linha de Cabeceira (Baulk Line)
+        // Linha de Cabeceira
         ctx.beginPath();
         ctx.moveTo(tb.left + tb.width * 0.25, tb.top);
         ctx.lineTo(tb.left + tb.width * 0.25, tb.bottom);
@@ -983,7 +953,6 @@
         const cue = this.balls[0];
         const ctx = this.ctx;
 
-        // Linha Guia de Mira
         const lineLen = 300;
         const targetX = cue.x + Math.cos(this.aimAngle) * lineLen;
         const targetY = cue.y + Math.sin(this.aimAngle) * lineLen;
@@ -997,9 +966,8 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Desenhar Taco de Madeira
         const pullBack = (this.power / 100) * 40 + 15;
-        const cueLen = Math.min(this.canvas.width * 0.4, 250);
+        const cueLen = Math.min(this.canvas.width / this.dpr * 0.4, 250);
         
         const startX = cue.x - Math.cos(this.aimAngle) * (cue.radius + pullBack);
         const startY = cue.y - Math.sin(this.aimAngle) * (cue.radius + pullBack);
@@ -1021,24 +989,24 @@
       }
 
       loop() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        const displayW = this.canvas.width / this.dpr;
+        const displayH = this.canvas.height / this.dpr;
+
+        this.ctx.clearRect(0, 0, displayW, displayH);
 
         this.drawTable();
         this.updatePhysics();
 
-        // Desenhar Bolas
         for (let ball of this.balls) {
           ball.draw(this.ctx);
         }
 
-        // Desenhar Taco / Mira
         this.drawCue();
 
         requestAnimationFrame(() => this.loop());
       }
     }
 
-    // Inicializar o Jogo ao Carregar a Página
     window.addEventListener('DOMContentLoaded', () => {
       new Game();
     });

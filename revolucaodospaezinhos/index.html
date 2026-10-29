@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b62432">
+<title>Revolução dos Pãezinhos 🍞</title>
+<style>
+:root{
+  --red:#b62432;--red-dark:#801b28;--cream:#fff4d9;--paper:#ffe8b4;
+  --gold:#ffd45c;--ink:#2b2730;--green:#427b59;--blue:#80cbd1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif;color:var(--ink)}
+body{
+  min-height:100svh;display:flex;align-items:center;justify-content:center;padding:16px;
+  background:radial-gradient(circle at 15% 15%,#f9d87d 0 5%,transparent 5.3%),
+    linear-gradient(145deg,#f8d77d,#f4b96e 55%,#e99d70);
+}
+.game{width:min(100%,900px);background:var(--cream);border:4px solid var(--ink);border-radius:22px;overflow:hidden;box-shadow:8px 9px 0 var(--ink)}
+header{background:var(--red);color:white;padding:16px 20px;border-bottom:4px solid var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{font-size:38px;filter:drop-shadow(2px 3px 0 #681622)}
+h1{font-size:clamp(18px,3vw,27px);line-height:1.05;margin:0;text-transform:uppercase;letter-spacing:.5px}
+.subtitle{font-size:12px;opacity:.9;margin-top:5px}
+.stamp{font-size:12px;font-weight:900;border:2px solid #fff;border-radius:8px;padding:7px 9px;transform:rotate(3deg);text-align:center;white-space:nowrap}
+main{padding:16px}
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{background:#fffaf0;border:2px solid var(--ink);border-radius:12px;padding:8px 10px;text-align:center;box-shadow:0 3px 0 #d9c59d}
+.stat small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:900;opacity:.7}
+.stat strong{font-size:clamp(18px,4vw,25px);line-height:1.5}
+#stage{position:relative;overflow:hidden;border:3px solid var(--ink);border-radius:15px;background:#a9dfe0;touch-action:pan-y}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;image-rendering:pixelated}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:#29242dba;color:white;text-align:center}
+.overlay.hidden{display:none}
+.dialog{max-width:410px;background:var(--cream);color:var(--ink);border:3px solid var(--ink);border-radius:16px;padding:18px;box-shadow:5px 5px 0 #15131a}
+.dialog h2{margin:0 0 8px;font-size:clamp(20px,4vw,30px);color:var(--red);text-transform:uppercase}
+.dialog p{margin:0 0 14px;line-height:1.45;font-size:14px}
+button{font:inherit;font-weight:900;cursor:pointer;border:2px solid var(--ink);border-radius:11px;padding:11px 15px;background:var(--gold);color:var(--ink);box-shadow:0 4px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.primary{background:var(--red);color:#fff}
+.controls-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+.tip{font-size:12px;line-height:1.5;max-width:440px}
+.tip b{color:var(--red)}
+.mobile-controls{display:none;gap:10px;align-items:center;justify-content:center;margin-top:14px}
+.pad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,43px);gap:5px}
+.pad button{padding:0;font-size:21px;background:#fffaf0;box-shadow:0 3px 0 var(--ink);touch-action:none;user-select:none}
+.pad .up{grid-column:2}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:2}.pad .right{grid-column:3;grid-row:2}
+.action{height:88px;width:88px;border-radius:50%;background:var(--red);color:white;font-size:13px;line-height:1.2;touch-action:none;user-select:none}
+footer{background:#f5dfb0;border-top:2px dashed #c7a56e;padding:10px 16px;text-align:center;font-size:11px;font-weight:800;letter-spacing:.3px}
+@media(max-width:600px){
+ body{padding:8px;align-items:flex-start}
+ .game{border-width:3px;border-radius:17px}
+ header{padding:12px}
+ .logo{font-size:30px}
+ .subtitle{font-size:10px}
+ .stamp{font-size:9px;padding:5px}
+ main{padding:10px}
+ .stat{padding:6px 4px}.stat small{font-size:9px}
+ .controls-row{align-items:flex-start}.tip{font-size:11px}
+ .mobile-controls{display:flex}
+ canvas{aspect-ratio:4/3}
+}
+@media(min-width:601px){.mobile-controls{display:none}}
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <div class="brand"><div class="logo">🍞</div><div><h1>Revolução dos Pãezinhos</h1><div class="subtitle">Nenhum pão fica para trás!</div></div></div>
+    <div class="stamp">PÃO, PAZ<br> E PARTILHA ☭</div>
+  </header>
+  <main>
+    <div class="hud">
+      <div class="stat"><small>🍞 Pães coletados</small><strong id="score">0</strong></div>
+      <div class="stat"><small>❤️ Vidas</small><strong id="lives">3</strong></div>
+      <div class="stat"><small>🚩 Nível</small><strong id="level">1</strong></div>
+    </div>
+    <div id="stage">
+      <canvas id="game" width="800" height="450" aria-label="Jogo de coletar pães e compartilhar com a comunidade"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="dialog">
+          <h2 id="overlayTitle">O pão é do povo!</h2>
+          <p id="overlayText">Colete os pãezinhos para alimentar a comunidade. Desvie dos acumuladores de cartola e compartilhe a riqueza!</p>
+          <button class="primary" id="startBtn">Começar a revolução ▶</button>
+        </div>
+      </div>
+    </div>
+    <div class="controls-row">
+      <div class="tip"><b>Como jogar:</b> use <b>WASD</b> ou as <b>setas</b> para se mover. Pegue 🍞 e evite os 💼. A cada 10 pães, a comunidade comemora — e o jogo fica mais rápido!</div>
+      <button id="pauseBtn" aria-label="Pausar jogo">Ⅱ Pausar</button>
+    </div>
+    <div class="mobile-controls" aria-label="Controles para celular">
+      <div class="pad">
+        <button class="up" data-dir="up" aria-label="Cima">▲</button>
+        <button class="left" data-dir="left" aria-label="Esquerda">◀</button>
+        <button class="down" data-dir="down" aria-label="Baixo">▼</button>
+        <button class="right" data-dir="right" aria-label="Direita">▶</button>
+      </div>
+      <button class="action" id="shareBtn">PARTILHAR<br>🤝</button>
+    </div>
+  </main>
+  <footer>FEITO COM SOLIDARIEDADE • COOPERAÇÃO É A NOSSA MAIOR FORÇA</footer>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const scoreEl=$('score'), livesEl=$('lives'), levelEl=$('level');
+  const overlay=$('overlay'), titleEl=$('overlayTitle'), textEl=$('overlayText');
+  const W=canvas.width,H=canvas.height;
+  let running=false, paused=false, score=0, lives=3, level=1, last=0, spawnTimer=0, breadTimer=0;
+  let player, breads=[], capitalists=[], particles=[], keys={}, touchDir=null, shareFlash=0;
+  const rand=(a,b)=>a+Math.random()*(b-a);
+  function reset(){
+    score=0;lives=3;level=1; breads=[];capitalists=[];particles=[];spawnTimer=0;breadTimer=0;shareFlash=0;
+    player={x:W/2,y:H/2,r:17,speed:230,invuln:0};
+    for(let i=0;i<5;i++) spawnBread();
+    for(let i=0;i<2;i++) spawnCapitalist();
+    updateHud();
+  }
+  function updateHud(){scoreEl.textContent=score;livesEl.textContent=lives;levelEl.textContent=level}
+  function spawnBread(){
+    let p=freeSpot();
+    breads.push({x:p.x,y:p.y,r:13,wiggle:rand(0,6.28)});
+  }
+  function spawnCapitalist(){
+    let p=freeSpot();
+    capitalists.push({x:p.x,y:p.y,r:18,speed:rand(55,80)+level*5,phase:rand(0,6.28)});
+  }
+  function freeSpot(){
+    let p;
+    for(let i=0;i<30;i++){
+      p={x:rand(35,W-35),y:rand(40,H-35)};
+      if(!player||Math.hypot(p.x-player.x,p.y-player.y)>100) break;
+    }
+    return p;
+  }
+  function burst(x,y,color,emoji='✦'){
+    for(let i=0;i<9;i++) particles.push({x,y,vx:rand(-100,100),vy:rand(-120,30),life:rand(.35,.8),max:.8,color,emoji});
+  }
+  function movePlayer(dt){
+    let dx=0,dy=0;
+    if(keys.ArrowLeft||keys.a||keys.A||touchDir==='left')dx--;
+    if(keys.ArrowRight||keys.d||keys.D||touchDir==='right')dx++;
+    if(keys.ArrowUp||keys.w||keys.W||touchDir==='up')dy--;
+    if(keys.ArrowDown||keys.s||keys.S||touchDir==='down')dy++;
+    if(dx&&dy){dx*=.7071;dy*=.7071}
+    player.x=Math.max(20,Math.min(W-20,player.x+dx*player.speed*dt));
+    player.y=Math.max(28,Math.min(H-20,player.y+dy*player.speed*dt));
+    if(player.invuln>0)player.invuln-=dt;
+  }
+  function update(dt){
+    if(!running||paused)return;
+    movePlayer(dt);
+    breadTimer+=dt;spawnTimer+=dt;
+    if(breadTimer>2.8&&breads.length<7){spawnBread();breadTimer=0}
+    if(spawnTimer>Math.max(2.2,6-level*.45)&&capitalists.length<Math.min(9,2+level)){spawnCapitalist();spawnTimer=0}
+    for(let i=breads.length-1;i>=0;i--){
+      let b=breads[i];b.wiggle+=dt*4;
+      if(Math.hypot(player.x-b.x,player.y-b.y)<player.r+b.r){
+        breads.splice(i,1);score++;burst(b.x,b.y,'#f4b82d','✦');
+        if(score%10===0){
+          level++;shareFlash=1.8;spawnCapitalist();burst(player.x,player.y,'#b62432','❤');
+        }
+        updateHud();
+      }
+    }
+    for(let i=capitalists.length-1;i>=0;i--){
+      let c=capitalists[i];
+      let dx=player.x-c.x,dy=player.y-c.y,d=Math.hypot(dx,dy)||1;
+      c.x+=dx/d*c.speed*dt;c.y+=dy/d*c.speed*dt;c.phase+=dt*4;
+      if(d<player.r+c.r&&player.invuln<=0){
+        lives--;player.invuln=1.5;burst(player.x,player.y,'#b62432','💥');
+        c.x=rand(50,W-50);c.y=rand(50,H-50);updateHud();
+        if(lives<=0)endGame();
+      }
+    }
+    for(let i=particles.length-1;i>=0;i--){
+      let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt;
+      if(p.life<=0)particles.splice(i,1);
+    }
+    shareFlash=Math.max(0,shareFlash-dt);
+  }
+  function rounded(x,y,w,h,r,fill,stroke){
+    ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=3;ctx.stroke()}
+  }
+  function drawBackground(){
+    ctx.fillStyle='#a9dfe0';ctx.fillRect(0,0,W,H);
+    // tile-like paths and community garden
+    ctx.fillStyle='#8bca8c';
+    for(let x=0;x<W;x+=80)for(let y=0;y<H;y+=80){ctx.beginPath();ctx.arc(x+12,y+13,2,0,Math.PI*2);ctx.fill()}
+    ctx.fillStyle='#f6dca0';ctx.fillRect(0,0,W,27);ctx.fillRect(0,H-20,W,20);
+    ctx.fillStyle='#f1c87c';ctx.fillRect(0,195,W,54);
+    ctx.strokeStyle='#dfb567';ctx.lineWidth=2;ctx.setLineDash([10,10]);ctx.beginPath();ctx.moveTo(0,222);ctx.lineTo(W,222);ctx.stroke();ctx.setLineDash([]);
+    // little red flags
+    for(let x=38;x<W;x+=100){
+      ctx.strokeStyle='#5d574b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,27);ctx.lineTo(x,65);ctx.stroke();
+      ctx.fillStyle='#b62432';ctx.beginPath();ctx.moveTo(x,28);ctx.lineTo(x+28,34);ctx.lineTo(x,43);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#ffd45c';ctx.font='12px sans-serif';ctx.fillText('★',x+3,38);
+    }
+    // garden beds
+    rounded(18,70,92,65,8,'#a66b45','#6d4938');
+    for(let i=0;i<5;i++){ctx.fillStyle='#4e9a5e';ctx.beginPath();ctx.arc(32+i*16,94+(i%2)*12,9,0,Math.PI*2);ctx.fill()}
+    rounded(W-110,H-105,90,66,8,'#a66b45','#6d4938');
+    for(let i=0;i<4;i++){ctx.fillStyle='#4e9a5e';ctx.beginPath();ctx.arc(W-95+i*19,H-81+(i%2)*13,9,0,Math.PI*2);ctx.fill()}
+    // community kitchen
+    rounded(W-103,70,77,70,8,'#fff0d2','#4c4140');
+    ctx.fillStyle='#b62432';ctx.beginPath();ctx.moveTo(W-112,75);ctx.lineTo(W-65,40);ctx.lineTo(W-18,75);ctx.closePath();ctx.fill();ctx.strokeStyle='#2b2730';ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle='#80cbd1';ctx.fillRect(W-87,94,20,20);ctx.fillStyle='#2b2730';ctx.fillRect(W-61,100,20,40);
+    ctx.fillStyle='#2b2730';ctx.font='bold 10px system-ui';ctx.fillText('COZINHA',W-97,132);
+  }
+  function drawBread(b){
+    let bob=Math.sin(b.wiggle)*3;
+    ctx.save();ctx.translate(b.x,b.y+bob);
+    ctx.fillStyle='#c17a2e';ctx.beginPath();ctx.ellipse(2,4,14,10,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffd477';ctx.beginPath();ctx.ellipse(0,0,13,10,0,Math.PI,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#e7a843';ctx.lineWidth=2;
+    for(let i=-6;i<=6;i+=6){ctx.beginPath();ctx.moveTo(i,-7);ctx.lineTo(i+3,-2);ctx.stroke()}
+    ctx.restore();
+  }
+  function drawPlayer(){
+    if(player.invuln>0&&Math.floor(performance.now()/90)%2===0)return;
+    ctx.save();ctx.translate(player.x,player.y);
+    ctx.fillStyle='#00000022';ctx.beginPath();ctx.ellipse(0,16,18,6,0,0,Math.PI*2);ctx.fill();
+    // red beret
+    ctx.fillStyle='#f0b78c';ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2b2730';ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle='#fff1d5';ctx.fillRect(-10,-2,20,11);
+    ctx.fillStyle='#2b2730';ctx.fillRect(-6,-3,3,3);ctx.fillRect(4,-3,3,3);
+    ctx.fillStyle='#b62432';ctx.beginPath();ctx.ellipse(0,-13,13,5,-.15,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#ffd45c';ctx.font='bold 11px sans-serif';ctx.fillText('★',-4,-10);
+    ctx.restore();
+  }
+  function drawCapitalist(c){
+    ctx.save();ctx.translate(c.x,c.y+Math.sin(c.phase)*2);
+    ctx.fillStyle='#00000022';ctx.beginPath();ctx.ellipse(0,17,19,6,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#4a3d55';ctx.beginPath();ctx.arc(0,0,16,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2b2730';ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle='#f2c39b';ctx.beginPath();ctx.arc(0,-1,10,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#2b2730';ctx.fillRect(-7,-4,5,3);ctx.fillRect(3,-4,5,3);
+    ctx.fillStyle='#2b2730';ctx.beginPath();ctx.moveTo(-14,-9);ctx.lineTo(0,-20);ctx.lineTo(14,-9);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#b62432';ctx.fillRect(-6,5,12,3);
+    ctx.fillStyle='#ffd45c';ctx.font='bold 13px sans-serif';ctx.fillText('$',-4,14);
+    ctx.restore();
+  }
+  function draw(){
+    drawBackground();
+    breads.forEach(drawBread);capitalists.forEach(drawCapitalist);drawPlayer();
+    particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.font='bold 18px sans-serif';ctx.fillText(p.emoji,p.x,p.y);ctx.globalAlpha=1});
+    if(shareFlash>0){
+      ctx.save();ctx.globalAlpha=Math.min(1,shareFlash);rounded(W/2-180,75,360,48,12,'#b62432','#2b2730');
+      ctx.fillStyle='white';ctx.font='bold 20px system-ui';ctx.textAlign='center';ctx.fillText('✊ A COMUNIDADE VENCE JUNTA! ✊',W/2,105);ctx.restore();
+    }
+  }
+  function loop(now){
+    const dt=Math.min((now-last)/1000||0,0.04);last=now;update(dt);draw();
+    requestAnimationFrame(loop);
+  }
+  function start(){
+    reset();running=true;paused=false;overlay.classList.add('hidden');$('pauseBtn').textContent='Ⅱ Pausar';
+  }
+  function endGame(){
+    running=false;paused=false;overlay.classList.remove('hidden');
+    titleEl.textContent='A luta continua! 🚩';
+    textEl.textContent=`Você coletou ${score} ${score===1?'pão':'pães'} e chegou ao nível ${level}. Na próxima, vamos repartir ainda mais!`;
+    $('startBtn').textContent='Jogar novamente ↻';
+  }
+  function togglePause(){
+    if(!running){if(overlay.classList.contains('hidden'))return;start();return}
+    paused=!paused;
+    $('pauseBtn').textContent=paused?'▶ Continuar':'Ⅱ Pausar';
+    if(paused){
+      overlay.classList.remove('hidden');titleEl.textContent='Assembleia em andamento ✊';
+      textEl.textContent='Respire, tome uma água e volte para a luta quando quiser.';
+      $('startBtn').textContent='Continuar ▶';
+    }else overlay.classList.add('hidden');
+  }
+  $('startBtn').addEventListener('click',()=>{
+    if(running&&paused){paused=false;overlay.classList.add('hidden');$('pauseBtn').textContent='Ⅱ Pausar'}
+    else start();
+  });
+  $('pauseBtn').addEventListener('click',togglePause);
+  $('shareBtn').addEventListener('click',()=>{
+    if(!running||paused)return;
+    // Share action clears nearby bread into bonus points; no harm to player.
+    let got=0;
+    for(let i=breads.length-1;i>=0;i--){
+      if(Math.hypot(player.x-breads[i].x,player.y-breads[i].y)<125){burst(breads[i].x,breads[i].y,'#ffd45c','❤');breads.splice(i,1);got++}
+    }
+    if(got===0){burst(player.x,player.y,'#ffd45c','🤝')}
+    score+=got;updateHud();shareFlash=.8;
+  });
+  document.querySelectorAll('[data-dir]').forEach(btn=>{
+    const dir=btn.dataset.dir;
+    const on=e=>{e.preventDefault();touchDir=dir};
+    const off=e=>{e.preventDefault();if(touchDir===dir)touchDir=null};
+    btn.addEventListener('pointerdown',on);
+    ['pointerup','pointercancel','pointerleave'].forEach(ev=>btn.addEventListener(ev,off));
+  });
+  window.addEventListener('keydown',e=>{
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();
+    keys[e.key]=true;
+    if(e.key==='Escape'||e.key==='p'||e.key==='P')togglePause();
+    if(e.key==='Enter'&&!running)start();
+  });
+  window.addEventListener('keyup',e=>{keys[e.key]=false});
+  window.addEventListener('blur',()=>{keys={};touchDir=null});
+  reset();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

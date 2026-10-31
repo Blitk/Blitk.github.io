@@ -1,0 +1,451 @@
+
+
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Miau Clicker 🐱</title>
+
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+
+  font-family:system-ui,sans-serif;
+
+  background:#fff5e9;color:#513b45;
+
+  min-height:100vh;padding:20px;
+
+  overflow-x:hidden;
+
+}
+
+header{text-align:center;margin:12px 0 22px}
+
+header h1{font-size:clamp(28px,6vw,42px);color:#e78b9d}
+
+header p{color:#9c7781}
+
+.game{max-width:900px;margin:auto}
+
+.stats{
+
+ display:grid;grid-template-columns:repeat(3,1fr);
+
+ gap:10px;margin-bottom:20px
+
+}
+
+.stat{
+
+ background:white;border-radius:17px;padding:14px;
+
+ text-align:center;box-shadow:0 4px 12px #dcaeb522
+
+}
+
+.stat small{color:#a58a92}
+
+.stat strong{display:block;font-size:clamp(18px,4vw,25px)}
+
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+
+.panel{
+
+ background:white;border-radius:22px;padding:22px;
+
+ box-shadow:0 6px 20px #dcaeb522;
+
+}
+
+.cat-area{
+
+ display:flex;flex-direction:column;align-items:center;
+
+ justify-content:center;min-height:310px;
+
+ background:#fff9f3;border-radius:18px;
+
+ position:relative;overflow:hidden
+
+}
+
+.cat{
+
+ border:0;background:none;font-size:120px;
+
+ cursor:pointer;user-select:none;
+
+ -webkit-tap-highlight-color:transparent;
+
+ transition:transform .1s;
+
+ touch-action:manipulation;
+
+}
+
+.cat:active{transform:scale(.85) rotate(-8deg)}
+
+.cat-name{font-weight:800;font-size:20px;margin-top:8px}
+
+.hint{font-size:13px;color:#b49aa1;margin-top:5px}
+
+.floating{
+
+ position:absolute;font-size:23px;font-weight:900;
+
+ color:#e58aa0;pointer-events:none;
+
+ animation:float .8s forwards
+
+}
+
+@keyframes float{
+
+ to{transform:translateY(-100px) scale(1.4);opacity:0}
+
+}
+
+.section-title{font-size:20px;margin-bottom:14px}
+
+.shop-item{
+
+ display:flex;align-items:center;gap:12px;
+
+ padding:12px;margin-bottom:10px;
+
+ background:#fff8f3;border-radius:15px;
+
+}
+
+.shop-icon{font-size:32px}
+
+.shop-info{flex:1;min-width:0}
+
+.shop-info strong{display:block}
+
+.shop-info small{color:#a58a92}
+
+.buy{
+
+ border:0;background:#ef9bad;color:white;
+
+ border-radius:12px;padding:10px 12px;
+
+ font-weight:800;cursor:pointer;
+
+ min-width:83px
+
+}
+
+.buy:disabled{background:#e6d9dc;cursor:not-allowed}
+
+.progress{
+
+ height:10px;background:#f5e4e7;border-radius:20px;
+
+ overflow:hidden;margin-top:12px
+
+}
+
+.bar{height:100%;width:0;background:#ed91a6;transition:width .2s}
+
+.footer{text-align:center;color:#b49aa1;font-size:12px;margin:20px}
+
+.reset{
+
+ border:0;background:none;color:#b58e99;
+
+ text-decoration:underline;cursor:pointer;margin-top:15px
+
+}
+
+@media(max-width:620px){
+
+ body{padding:12px}
+
+ .layout{grid-template-columns:1fr}
+
+ .panel{padding:16px}
+
+ .cat-area{min-height:260px}
+
+ .cat{font-size:105px}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="game">
+
+<header>
+
+<h1>🐾 MIAU CLICKER</h1>
+
+<p>Um pequeno gatinho, um enorme império de sardinhas!</p>
+
+</header>
+
+<div class="stats">
+
+ <div class="stat"><small>🐟 Sardinhas</small><strong id="coins">0</strong></div>
+
+ <div class="stat"><small>⚡ Por clique</small><strong id="power">1</strong></div>
+
+ <div class="stat"><small>😻 Por segundo</small><strong id="cps">0</strong></div>
+
+</div>
+
+<div class="layout">
+
+ <section class="panel">
+
+  <div class="cat-area" id="catArea">
+
+   <button class="cat" id="cat" aria-label="Clique no gatinho">🐱</button>
+
+   <div class="cat-name">Mingau</div>
+
+   <div class="hint">Clique no gatinho para ganhar sardinhas!</div>
+
+  </div>
+
+  <div style="margin-top:18px">
+
+   <strong>Próxima conquista 🏆</strong>
+
+   <p id="achievement" style="font-size:13px;color:#a58a92;margin-top:5px">Primeira sardinha: 10 🐟</p>
+
+   <div class="progress"><div class="bar" id="bar"></div></div>
+
+  </div>
+
+  <center><button class="reset" id="reset">Recomeçar partida</button></center>
+
+ </section>
+
+ <section class="panel">
+
+  <h2 class="section-title">🛍️ Loja de melhorias</h2>
+
+  <div id="shop"></div>
+
+ </section>
+
+</div>
+
+<div class="footer">Feito com 🩷 e muitos miaus | Seu gatinho nunca dorme!</div>
+
+</div>
+
+<script>
+
+const $=id=>document.getElementById(id);
+
+const items=[
+
+ {name:"Petisco",desc:"+1 sardinha por clique",icon:"🍪",base:15,type:"click",value:1},
+
+ {name:"Arranhador",desc:"+1 sardinha por segundo",icon:"🪵",base:50,type:"auto",value:1},
+
+ {name:"Gatinho ajudante",desc:"+5 sardinhas por segundo",icon:"🐈",base:200,type:"auto",value:5},
+
+ {name:"Máquina de ração",desc:"+20 sardinhas por segundo",icon:"🥫",base:800,type:"auto",value:20},
+
+ {name:"Exército felino",desc:"+100 sardinhas por segundo",icon:"😻",base:4000,type:"auto",value:100},
+
+ {name:"Rei dos gatos",desc:"+500 sardinhas por segundo",icon:"👑",base:20000,type:"auto",value:500}
+
+];
+
+let state=JSON.parse(localStorage.getItem("miauSave")||"null")||{
+
+ coins:0,power:1,levels:Array(6).fill(0),total:0
+
+};
+
+let last=Date.now();
+
+function cost(i){
+
+ return Math.floor(items[i].base*Math.pow(1.18,state.levels[i]));
+
+}
+
+function cps(){
+
+ return items.reduce((sum,item,i)=>
+
+ sum+(item.type==="auto"?item.value*state.levels[i]:0),0);
+
+}
+
+function fmt(n){
+
+ if(n<1000)return Math.floor(n).toLocaleString("pt-BR");
+
+ const units=["K","M","B","T","Qa","Qi"];
+
+ let u=-1;
+
+ while(n>=1000&&u<units.length-1){n/=1000;u++}
+
+ return n.toFixed(1)+units[u];
+
+}
+
+function save(){
+
+ localStorage.setItem("miauSave",JSON.stringify(state));
+
+}
+
+function render(){
+
+ $("coins").textContent=fmt(state.coins);
+
+ $("power").textContent=fmt(state.power);
+
+ $("cps").textContent=fmt(cps());
+
+ $("shop").innerHTML=items.map((item,i)=>{
+
+ let price=cost(i);
+
+ return `<div class="shop-item">
+
+ <div class="shop-icon">${item.icon}</div>
+
+ <div class="shop-info">
+
+ <strong>${item.name} <small>x${state.levels[i]}</small></strong>
+
+ <small>${item.desc}</small><br>
+
+ <small>Próximo: ${fmt(price)} 🐟</small>
+
+ </div>
+
+ <button class="buy" data-buy="${i}" ${state.coins<price?"disabled":""}>Comprar</button>
+
+ </div>`;
+
+ }).join("");
+
+ let milestones=[10,100,500,1000,5000,10000,50000];
+
+ let next=milestones.find(n=>state.total<n);
+
+ $("achievement").textContent=next?
+
+ `Próxima conquista: ${fmt(next)} sardinhas 🏆`:
+
+ "Lenda dos gatinhos desbloqueada! 👑";
+
+ $("bar").style.width=next?
+
+ Math.min(100,state.total/next*100)+"%":"100%";
+
+}
+
+$("shop").addEventListener("click",e=>{
+
+ let btn=e.target.closest("[data-buy]");
+
+ if(!btn)return;
+
+ let i=Number(btn.dataset.buy),price=cost(i);
+
+ if(state.coins<price)return;
+
+ state.coins-=price;
+
+ state.levels[i]++;
+
+ if(items[i].type==="click")state.power+=items[i].value;
+
+ render();save();
+
+});
+
+$("cat").addEventListener("click",e=>{
+
+ state.coins+=state.power;
+
+ state.total+=state.power;
+
+ const pop=document.createElement("span");
+
+ pop.className="floating";
+
+ pop.textContent="+"+fmt(state.power)+" 🐟";
+
+ const rect=$("catArea").getBoundingClientRect();
+
+ pop.style.left=(e.clientX-rect.left-20)+"px";
+
+ pop.style.top=(e.clientY-rect.top-10)+"px";
+
+ $("catArea").appendChild(pop);
+
+ setTimeout(()=>pop.remove(),800);
+
+ $("cat").textContent=["😻","😽","🐱","😺","😸"][Math.floor(Math.random()*5)];
+
+ render();save();
+
+});
+
+$("reset").addEventListener("click",()=>{
+
+ if(confirm("Tem certeza? Todo o progresso será perdido!")){
+
+ localStorage.removeItem("miauSave");
+
+ state={coins:0,power:1,levels:Array(6).fill(0),total:0};
+
+ render();
+
+ }
+
+});
+
+setInterval(()=>{
+
+ let now=Date.now();
+
+ let elapsed=Math.min((now-last)/1000,5);
+
+ last=now;
+
+ let gain=cps()*elapsed;
+
+ state.coins+=gain;
+
+ state.total+=gain;
+
+ render();
+
+ save();
+
+},500);
+
+render();
+
+</script>
+
+</body>
+
+</html>
